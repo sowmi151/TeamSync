@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useApp, NavigationTab } from '../../context/AppContext';
+import React, { useState } from "react";
+import { useApp, NavigationTab } from "../../context/AppContext";
 import {
   Bell,
   CheckCheck,
@@ -9,9 +9,9 @@ import {
   Menu,
   Shield,
   Sparkles,
-  X
-} from 'lucide-react';
-import { Avatar } from './Avatar';
+  X,
+} from "lucide-react";
+import { Avatar } from "./Avatar";
 
 interface HeaderProps {
   onOpenDownloadZip: () => void;
@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDownloadZip,
   onOpenCreateProject,
   onOpenDatabaseModal,
-  onOpenPythonModal
+  onOpenPythonModal,
 }) => {
   const {
     activeTab,
@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    requests
+    requests,
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -44,32 +44,35 @@ export const Header: React.FC<HeaderProps> = ({
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const pendingRequestsCount = requests.filter(
-    (r) => r.receiverId === currentUser.id && r.status === 'pending'
+    (r) => r.receiverId === currentUser.id && r.status === "pending",
   ).length;
 
-  const navItems: Array<{ id: NavigationTab; label: string; badge?: number }> = [
-    { id: 'dashboard', label: 'Overview' },
-    { id: 'discover', label: 'Discover' },
-    { id: 'compare', label: 'Compare' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'build-team', label: 'Assemble Team' },
-    { id: 'my-team', label: 'My Squad' },
-    { id: 'requests', label: 'Requests', badge: pendingRequestsCount },
-    { id: 'messages', label: 'Messages' },
-    { id: 'test-suite', label: 'Harness' }
-  ];
+  const navItems: Array<{ id: NavigationTab; label: string; badge?: number }> =
+    [
+      { id: "dashboard", label: "Overview" },
+      { id: "discover", label: "Discover" },
+      { id: "compare", label: "Compare" },
+      { id: "projects", label: "Projects" },
+      { id: "build-team", label: "Assemble Team" },
+      { id: "my-team", label: "My Squad" },
+      { id: "requests", label: "Requests", badge: pendingRequestsCount },
+      { id: "messages", label: "Messages" },
+      { id: "test-suite", label: "Harness" },
+    ];
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#0E0E12]/92 backdrop-blur-md border-b border-white/[0.08]">
+    <header className="sticky top-0 z-40 w-full bg-[#0E0E12]/92 backdrop-blur-md border-b border-white/8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Zone 1: Single text element wordmark in Classic Serif */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => setActiveTab("dashboard")}
             className="flex items-center gap-2.5 group text-left"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1E1A14] to-[#2E271B] flex items-center justify-center border border-[#D4AF37]/35 shadow-sm group-hover:border-[#D4AF37]/60 transition-colors">
-              <span className="font-serif-title font-bold text-sm text-[#E5C07B]">TS</span>
+            <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-[#1E1A14] to-[#2E271B] flex items-center justify-center border border-[#D4AF37]/35 shadow-sm group-hover:border-[#D4AF37]/60 transition-colors">
+              <span className="font-serif-title font-bold text-sm text-[#E5C07B]">
+                TS
+              </span>
             </div>
             <span className="font-serif-title text-2xl font-bold tracking-tight text-[#FAF7F2] group-hover:text-[#E8D390] transition-colors">
               TeamSync
@@ -87,8 +90,8 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setActiveTab(item.id)}
                 className={`relative px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 ${
                   isActive
-                    ? 'text-[#FAF7F2] bg-[#1E1E24] border border-white/[0.12] shadow-sm'
-                    : 'text-[#A1A1AA] hover:text-[#FAF7F2] hover:bg-[#15151A]'
+                    ? "text-[#FAF7F2] bg-[#1E1E24] border border-white/12 shadow-sm"
+                    : "text-[#A1A1AA] hover:text-[#FAF7F2] hover:bg-[#15151A]"
                 }`}
               >
                 <span>{item.label}</span>
@@ -104,12 +107,11 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Zone 3: Actions (Python Build, Accounts DB, Download ZIP, Notifications, User Switcher) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-
           {/* Notifications Trigger */}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg bg-[#141418] hover:bg-[#1B1B22] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.08] transition-all"
+              className="relative p-2 rounded-lg bg-[#141418] hover:bg-[#1B1B22] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-all"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
@@ -120,8 +122,8 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Notifications Popover */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-[#141418] border border-white/[0.12] shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-3">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-[#141418] border border-white/12 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="flex items-center justify-between pb-3 border-b border-whit.e/[0.08] mb-3">
                   <div className="flex items-center gap-2">
                     <span className="font-serif-title font-bold text-base text-[#FAF7F2]">
                       Notifications
@@ -148,16 +150,19 @@ export const Header: React.FC<HeaderProps> = ({
                         key={notif.id}
                         onClick={() => {
                           markNotificationAsRead(notif.id);
-                          if (notif.linkTab) setActiveTab(notif.linkTab as NavigationTab);
+                          if (notif.linkTab)
+                            setActiveTab(notif.linkTab as NavigationTab);
                           setShowNotifications(false);
                         }}
                         className={`p-3 rounded-lg transition-all cursor-pointer text-xs ${
                           notif.isRead
-                            ? 'bg-[#0E0E12] text-[#71717A]'
-                            : 'bg-[#1A1A22] text-[#FAF7F2] border border-white/[0.08]'
+                            ? "bg-[#0E0E12] text-[#71717A]"
+                            : "bg-[#1A1A22] text-[#FAF7F2] border border-white/8"
                         }`}
                       >
-                        <div className="font-semibold mb-0.5 text-[#FAF7F2]">{notif.title}</div>
+                        <div className="font-semibold mb-0.5 text-[#FAF7F2]">
+                          {notif.title}
+                        </div>
                         <div className="text-[11px] text-[#A1A1AA] line-clamp-2">
                           {notif.description}
                         </div>
@@ -177,23 +182,23 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
-              className="flex items-center gap-2 p-1.5 rounded-lg bg-[#141418] border border-white/[0.08] hover:border-white/[0.18] transition-all"
+              className="flex items-center gap-2 p-1.5 rounded-lg bg-[#141418] border border-white/8 hover:border-white/18 transition-all"
             >
               <Avatar
                 name={currentUser.name}
                 avatarUrl={currentUser.avatarUrl}
                 size="sm"
               />
-              <span className="hidden md:block text-xs font-medium text-[#FAF7F2] max-w-[100px] truncate">
-                {currentUser.name.split(' ')[0]}
+              <span className="hidden md:block text-xs font-medium text-[#FAF7F2] max-w-25 truncate">
+                {currentUser.name.split(" ")[0]}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-[#71717A]" />
             </button>
 
             {/* Dropdown Menu */}
             {showUserDropdown && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#141418] border border-white/[0.12] shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-2 py-1.5 mb-2 border-b border-white/[0.08]">
+              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#141418] border border-white/12 shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 mb-2 border-b border-white/8">
                   <div className="font-semibold text-xs text-[#FAF7F2]">
                     {currentUser.name}
                   </div>
@@ -201,14 +206,14 @@ export const Header: React.FC<HeaderProps> = ({
                     {currentUser.email}
                   </div>
                   <div className="text-[10px] text-[#E5C07B] mt-0.5">
-                    Demo Mode · {currentUser.roles?.[0] || 'Student'}
+                    Demo Mode · {currentUser.roles?.[0] || "Student"}
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <button
                     onClick={() => {
-                      setActiveTab('profile');
+                      setActiveTab("profile");
                       setShowUserDropdown(false);
                     }}
                     className="w-full text-left px-2.5 py-1.5 text-xs text-[#FAF7F2] hover:bg-[#1E1E24] rounded-lg transition-colors"
@@ -216,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
                     Edit Profile & Skills
                   </button>
 
-                  <div className="pt-2 border-t border-white/[0.08]">
+                  <div className="pt-2 border-t border-white/8">
                     <span className="block px-2 text-[10px] uppercase font-semibold text-[#71717A] mb-1">
                       Switch Demo Profile:
                     </span>
@@ -229,13 +234,13 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full text-left px-2 py-1 text-xs rounded-md transition-colors flex items-center justify-between ${
                           s.id === currentUser.id
-                            ? 'text-[#E5C07B] font-semibold bg-[#1F1C16]'
-                            : 'text-[#A1A1AA] hover:text-[#FAF7F2] hover:bg-[#1A1A22]'
+                            ? "text-[#E5C07B] font-semibold bg-[#1F1C16]"
+                            : "text-[#A1A1AA] hover:text-[#FAF7F2] hover:bg-[#1A1A22]"
                         }`}
                       >
                         <span className="truncate">{s.name}</span>
                         <span className="text-[10px] text-[#71717A]">
-                          {s.roles?.[0]?.split(' ')[0] || ''}
+                          {s.roles?.[0]?.split(" ")[0] || ""}
                         </span>
                       </button>
                     ))}
@@ -248,16 +253,20 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg bg-[#141418] border border-white/[0.08] text-[#A1A1AA] hover:text-[#FAF7F2]"
+            className="lg:hidden p-2 rounded-lg bg-[#141418] border border-white/8 text-[#A1A1AA] hover:text-[#FAF7F2]"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#111115] border-b border-white/[0.08] px-4 py-3 space-y-1.5 animate-in slide-in-from-top duration-150">
+        <div className="lg:hidden bg-[#111115] border-b border-white/8 px-4 py-3 space-y-1.5 animate-in slide-in-from-top duration-150">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -267,8 +276,8 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between ${
                 activeTab === item.id
-                  ? 'bg-[#1E1E24] text-[#FAF7F2]'
-                  : 'text-[#A1A1AA] hover:bg-[#16161B]'
+                  ? "bg-[#1E1E24] text-[#FAF7F2]"
+                  : "text-[#A1A1AA] hover:bg-[#16161B]"
               }`}
             >
               <span>{item.label}</span>
