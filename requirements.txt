@@ -1,0 +1,7 @@
+# TeamSync — Python Web Application Dependencies
+# Note: app.py runs with ZERO dependencies using Python's standard library!
+# These optional packages are only required if running flask_app.py:
+
+flask>=3.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0

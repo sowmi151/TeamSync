@@ -1,0 +1,6 @@
+{
+  "name": "TeamSync",
+  "description": "Intelligent Team Matching System for College Students",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
