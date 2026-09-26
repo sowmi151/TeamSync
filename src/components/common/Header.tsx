@@ -104,41 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Zone 3: Actions (Python Build, Accounts DB, Download ZIP, Notifications, User Switcher) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Python Build & Engine Trigger */}
-          <button
-            onClick={onOpenPythonModal}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-[#17221C] to-[#121915] hover:from-[#1D2C24] hover:to-[#17221C] text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-all shadow-sm"
-            title="Python 3.10+ Web Application & SQLite Build"
-          >
-            <span>🐍</span>
-            <span className="hidden md:inline font-semibold">Python</span>
-            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/20">
-              app.py
-            </span>
-          </button>
-
-          {/* Collegiate Database & Accounts Modal Trigger */}
-          <button
-            onClick={onOpenDatabaseModal}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg bg-[#141418] hover:bg-[#1B1B22] text-[#FAF7F2] border border-white/[0.12] hover:border-[#D4AF37]/50 transition-all shadow-sm"
-            title="Explore 52 Verified Real Collegiate Accounts & SQL Database"
-          >
-            <Database className="w-3.5 h-3.5 text-[#E5C07B]" />
-            <span className="hidden sm:inline">Accounts DB</span>
-            <span className="text-[10px] font-mono-nums px-1.5 py-0.2 rounded-full bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/30">
-              {students.length}
-            </span>
-          </button>
-
-          {/* Download Complete Project (.ZIP) Button */}
-          <button
-            onClick={onOpenDownloadZip}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#141418] hover:bg-[#1B1B22] text-[#E8D390] border border-[#D4AF37]/25 hover:border-[#D4AF37]/45 transition-all"
-            title="Download full project code runnable in VS Code"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download .ZIP</span>
-          </button>
 
           {/* Notifications Trigger */}
           <div className="relative">
@@ -314,38 +279,6 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           ))}
-          <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between gap-2">
-            <button
-              onClick={() => {
-                onOpenPythonModal();
-                setMobileMenuOpen(false);
-              }}
-              className="text-xs text-emerald-300 font-medium flex items-center gap-1.5 py-1"
-            >
-              <span>🐍</span>
-              <span>Python app.py</span>
-            </button>
-            <button
-              onClick={() => {
-                onOpenDatabaseModal();
-                setMobileMenuOpen(false);
-              }}
-              className="text-xs text-[#FAF7F2] font-medium flex items-center gap-1.5 py-1"
-            >
-              <Database className="w-3.5 h-3.5 text-[#E5C07B]" />
-              <span>Accounts ({students.length})</span>
-            </button>
-            <button
-              onClick={() => {
-                onOpenDownloadZip();
-                setMobileMenuOpen(false);
-              }}
-              className="text-xs text-[#E5C07B] font-medium flex items-center gap-1.5 py-1"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>.ZIP</span>
-            </button>
-          </div>
         </div>
       )}
     </header>
