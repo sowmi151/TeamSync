@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useApp } from '../../context/AppContext';
-import { Student } from '../../types';
-import { calculateStudentMatch } from '../../utils/matching/studentMatching';
-import { Orbit, RotateCw, Sparkles } from 'lucide-react';
+import React, { useRef, useEffect, useState, useMemo } from "react";
+import { useApp } from "../../context/AppContext";
+import { Student } from "../../types";
+import { calculateStudentMatch } from "../../utils/matching/studentMatching";
+import { Orbit, RotateCw } from "lucide-react";
 
 interface NetworkNode {
   student: Student;
@@ -24,23 +24,23 @@ export const TeamNetwork3D: React.FC<{
 }> = ({ onSelectStudent, height = 480 }) => {
   const { currentUser, students, setSelectedStudentForModal } = useApp();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [mode, setMode] = useState<'3D' | '2D'>('3D');
+  const [mode, setMode] = useState<"3D" | "2D">("3D");
   const [hoveredNode, setHoveredNode] = useState<NetworkNode | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-  const rotationRef = useRef({ rotX: 0.22, rotY: 0.32 });
-  const autoRotateSpeed = useRef(0.0025);
 
-  // Generate 200 random 3D background stars for parallax depth
+  const rotationRef = useRef({ rotX: 0.15, rotY: 0.25 });
+  const autoRotateSpeed = useRef(0.002);
+
   const backgroundStars = useMemo(() => {
     const stars = [];
     for (let i = 0; i < 200; i++) {
       stars.push({
-        x: (Math.random() - 0.5) * 2000,
-        y: (Math.random() - 0.5) * 2000,
-        z: (Math.random() - 0.5) * 2000,
+        x: (Math.random() - 0.5) * 3000,
+        y: (Math.random() - 0.5) * 3000,
+        z: (Math.random() - 0.5) * 3000,
         radius: Math.random() * 1.5 + 0.5,
-        alpha: Math.random() * 0.8 + 0.2
+        alpha: Math.random() * 0.8 + 0.2,
       });
     }
     return stars;
@@ -55,10 +55,11 @@ export const TeamNetwork3D: React.FC<{
           student: s,
           matchScore: match.overallScore,
           matchLabel: match.matchLabel,
-          confidence: match.confidenceLabel
+          confidence: match.confidenceLabel,
         };
-      })
-      .sort((a, b) => b.matchScore - a.matchScore);
+      });
+    // Removed the .sort() here so the students are naturally distributed
+    // around the 360-degree sphere regardless of their score.
   }, [students, currentUser]);
 
   const nodes = useMemo(() => {
@@ -66,31 +67,37 @@ export const TeamNetwork3D: React.FC<{
     const count = otherStudents.length;
 
     otherStudents.forEach((item, index) => {
-      const score = Math.max(20, Math.min(100, item.matchScore));
-      const dist = 320 - (score * 2.2);
+      const score = Math.max(10, Math.min(100, item.matchScore));
 
-      const phi = Math.acos(-1 + (2 * index) / Math.max(1, count));
-      const theta = Math.sqrt(count * Math.PI) * phi;
+      const dist = 850 - score * 7;
 
-      const x = dist * Math.cos(theta) * Math.sin(phi);
-      const y = (dist * Math.sin(theta) * Math.sin(phi)) * 0.72;
-      const z = dist * Math.cos(phi);
+      // PERFECT 360-DEGREE SPHERICAL DISTRIBUTION (Golden Ratio Spiral)
+      const phi = Math.acos(1 - (2 * index) / Math.max(1, count - 1));
+      const theta = Math.PI * (1 + Math.sqrt(5)) * index;
 
-      // Deep Space Neon Node Colors
-      let color = '#00FFFF'; // Bright Cyan
-      if (score >= 90) color = '#FF00FF'; // Bright Magenta
-      else if (score >= 75) color = '#38BDF8'; 
-      else if (score >= 60) color = '#818CF8'; 
-      else color = '#334155'; 
+      // STRETCH TO FILL THE WIDE BOX
+      const x = dist * Math.cos(theta) * Math.sin(phi) * 1.8;
+      const y = dist * Math.sin(theta) * Math.sin(phi) * 0.8;
+      const z = dist * Math.cos(phi) * 1.2;
+
+      let color = "#00FFFF";
+      if (score >= 90) color = "#FF00FF";
+      else if (score >= 75) color = "#38BDF8";
+      else if (score >= 60) color = "#818CF8";
+      else color = "#334155";
 
       list.push({
         student: item.student,
         matchScore: item.matchScore,
         matchLabel: item.matchLabel,
         confidence: item.confidence,
-        x, y, z, screenX: 0, screenY: 0,
-        radius: Math.max(15, Math.min(24, 12 + (score * 0.12))),
-        color
+        x,
+        y,
+        z,
+        screenX: 0,
+        screenY: 0,
+        radius: Math.max(16, Math.min(28, 12 + score * 0.15)),
+        color,
       });
     });
 
@@ -100,7 +107,7 @@ export const TeamNetwork3D: React.FC<{
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationFrameId: number;
@@ -119,11 +126,12 @@ export const TeamNetwork3D: React.FC<{
 
       const centerX = width / 2;
       const centerY = height / 2;
-      const fov = 420;
+
+      const fov = 650;
 
       pulseAngle += 0.025;
 
-      if (mode === '3D' && !isDragging) {
+      if (mode === "3D" && !isDragging) {
         rotationRef.current.rotY += autoRotateSpeed.current;
       }
 
@@ -134,12 +142,12 @@ export const TeamNetwork3D: React.FC<{
 
       // --- 1. DRAW 3D PARALLAX BACKGROUND STARS ---
       ctx.save();
-      backgroundStars.forEach(star => {
+      backgroundStars.forEach((star) => {
         let px = star.x;
         let py = star.y;
         let pz = star.z;
 
-        if (mode === '3D') {
+        if (mode === "3D") {
           const x1 = px * cosY - pz * sinY;
           const z1 = pz * cosY + px * sinY;
           const y2 = py * cosX - z1 * sinX;
@@ -149,7 +157,8 @@ export const TeamNetwork3D: React.FC<{
           pz = z2;
         }
 
-        const scale = mode === '3D' ? fov / (fov + pz + 800) : fov / (fov + 800);
+        const scale =
+          mode === "3D" ? fov / (fov + pz + 1000) : fov / (fov + 1000);
         if (scale < 0) return; // Behind camera
 
         const screenX = centerX + px * scale;
@@ -157,7 +166,7 @@ export const TeamNetwork3D: React.FC<{
 
         ctx.beginPath();
         ctx.arc(screenX, screenY, star.radius * scale, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${150 + Math.random()*105}, ${200 + Math.random()*55}, 255, ${star.alpha})`;
+        ctx.fillStyle = `rgba(${150 + Math.random() * 105}, ${200 + Math.random() * 55}, 255, ${star.alpha})`;
         ctx.fill();
       });
       ctx.restore();
@@ -167,7 +176,7 @@ export const TeamNetwork3D: React.FC<{
         let py = node.y;
         let pz = node.z;
 
-        if (mode === '3D') {
+        if (mode === "3D") {
           const x1 = px * cosY - pz * sinY;
           const z1 = pz * cosY + px * sinY;
           const y2 = py * cosX - z1 * sinX;
@@ -179,25 +188,32 @@ export const TeamNetwork3D: React.FC<{
           pz = 0;
         }
 
-        const scale = mode === '3D' ? fov / (fov + pz + 210) : 1;
+        const scale = mode === "3D" ? fov / (fov + pz + 400) : 0.6;
         const screenX = centerX + px * scale;
         const screenY = centerY + py * scale;
         const currentRadius = Math.max(12, node.radius * scale);
 
-        return { ...node, transformedZ: pz, scale, screenX, screenY, currentRadius };
+        return {
+          ...node,
+          transformedZ: pz,
+          scale,
+          screenX,
+          screenY,
+          currentRadius,
+        };
       });
 
       projectedNodes.sort((a, b) => b.transformedZ - a.transformedZ);
 
-      // --- 2. NEON CELESTIAL RINGS ---
+      // --- 2. WIDER NEON CELESTIAL RINGS ---
       ctx.save();
-      const ringDistances = [95, 175, 255];
+      const ringDistances = [150, 300, 450];
       ringDistances.forEach((d, idx) => {
         ctx.beginPath();
-        ctx.arc(centerX, centerY, d, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255, 0, 255, ${0.15 + idx * 0.05})`;
+        ctx.ellipse(centerX, centerY, d * 1.5, d * 0.8, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 0, 255, ${0.1 + idx * 0.05})`;
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 7]);
+        ctx.setLineDash([4, 8]);
         ctx.stroke();
       });
       ctx.restore();
@@ -205,20 +221,27 @@ export const TeamNetwork3D: React.FC<{
       // --- 3. CONNECTING NEON THREADS ---
       projectedNodes.forEach((node) => {
         const isHovered = hoveredNode?.student.id === node.student.id;
-        const alpha = isHovered ? 1 : Math.max(0.2, (node.matchScore / 100) * 0.5);
+        const alpha = isHovered
+          ? 1
+          : Math.max(0.15, (node.matchScore / 100) * 0.4);
 
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
         ctx.lineTo(node.screenX, node.screenY);
 
-        const gradient = ctx.createLinearGradient(centerX, centerY, node.screenX, node.screenY);
-        gradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
+        const gradient = ctx.createLinearGradient(
+          centerX,
+          centerY,
+          node.screenX,
+          node.screenY,
+        );
+        gradient.addColorStop(0, "rgba(255, 0, 255, 0.7)");
         gradient.addColorStop(0.6, `rgba(0, 255, 255, ${alpha})`);
         gradient.addColorStop(1, `${node.color}`);
 
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = isHovered ? 2.5 : 1.2;
+        ctx.lineWidth = isHovered ? 2.5 : 1;
         ctx.stroke();
 
         const particleT = (Math.sin(pulseAngle + node.matchScore) + 1) / 2;
@@ -226,46 +249,53 @@ export const TeamNetwork3D: React.FC<{
         const partY = centerY + (node.screenY - centerY) * particleT;
 
         ctx.beginPath();
-        ctx.arc(partX, partY, 2, 0, Math.PI * 2);
-        ctx.fillStyle = isHovered ? '#FFFFFF' : '#00FFFF';
-        ctx.shadowColor = '#00FFFF';
-        ctx.shadowBlur = 10;
+        ctx.arc(partX, partY, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = isHovered ? "#FFFFFF" : "#00FFFF";
+        ctx.shadowColor = "#00FFFF";
+        ctx.shadowBlur = 15;
         ctx.fill();
         ctx.restore();
       });
 
       // --- 4. CENTER BLACK HOLE (YOU) ---
       ctx.save();
-      const centerRadius = 28 + Math.sin(pulseAngle * 1.4) * 1.5;
-      const auraGrad = ctx.createRadialGradient(centerX, centerY, centerRadius * 0.6, centerX, centerY, centerRadius * 2.2);
-      auraGrad.addColorStop(0, 'rgba(255, 0, 255, 0.4)');
-      auraGrad.addColorStop(0.7, 'rgba(0, 255, 255, 0.1)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const centerRadius = 32 + Math.sin(pulseAngle * 1.4) * 2;
+      const auraGrad = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        centerRadius * 0.5,
+        centerX,
+        centerY,
+        centerRadius * 2.5,
+      );
+      auraGrad.addColorStop(0, "rgba(255, 0, 255, 0.5)");
+      auraGrad.addColorStop(0.7, "rgba(0, 255, 255, 0.15)");
+      auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
       ctx.fillStyle = auraGrad;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, centerRadius * 2.2, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, centerRadius * 2.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
       ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#050819';
-      ctx.shadowColor = '#FF00FF';
-      ctx.shadowBlur = 25;
+      ctx.fillStyle = "#050819";
+      ctx.shadowColor = "#FF00FF";
+      ctx.shadowBlur = 30;
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#00FFFF';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#00FFFF";
       ctx.stroke();
 
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('YOU', centerX, centerY - 4);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("YOU", centerX, centerY - 4);
 
-      ctx.font = '9px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#94A3B8';
-      ctx.fillText(currentUser.name.split(' ')[0], centerX, centerY + 8);
+      ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = "#94A3B8";
+      ctx.fillText(currentUser.name.split(" ")[0], centerX, centerY + 10);
       ctx.restore();
 
       // --- 5. DRAW FOREGROUND NODES ---
@@ -280,22 +310,26 @@ export const TeamNetwork3D: React.FC<{
 
         ctx.beginPath();
         ctx.arc(node.screenX, node.screenY, node.currentRadius, 0, Math.PI * 2);
-        ctx.fillStyle = '#050819';
+        ctx.fillStyle = "#050819";
         ctx.fill();
 
         ctx.lineWidth = isHovered ? 2.5 : 1.5;
-        ctx.strokeStyle = isHovered ? '#FFFFFF' : node.color;
+        ctx.strokeStyle = isHovered ? "#FFFFFF" : node.color;
         ctx.stroke();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${Math.max(9, Math.round(10 * (node.scale || 1)))}px "JetBrains Mono", monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = `bold ${Math.max(9, Math.round(11 * (node.scale || 1)))}px "JetBrains Mono", monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText(`${node.matchScore}%`, node.screenX, node.screenY);
 
-        ctx.font = `${Math.max(9, Math.round(11 * (node.scale || 1)))}px "Plus Jakarta Sans", sans-serif`;
-        ctx.fillStyle = isHovered ? '#FFFFFF' : '#94A3B8';
-        ctx.fillText(node.student.name.split(' ')[0], node.screenX, node.screenY + node.currentRadius + 14);
+        ctx.font = `${Math.max(10, Math.round(12 * (node.scale || 1)))}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = isHovered ? "#FFFFFF" : "#94A3B8";
+        ctx.fillText(
+          node.student.name.split(" ")[0],
+          node.screenX,
+          node.screenY + node.currentRadius + 14,
+        );
 
         ctx.restore();
       });
@@ -320,17 +354,20 @@ export const TeamNetwork3D: React.FC<{
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    if (isDragging && mode === '3D') {
+    if (isDragging && mode === "3D") {
       const dx = e.clientX - lastMousePos.x;
       const dy = e.clientY - lastMousePos.y;
 
       rotationRef.current.rotY += dx * 0.007;
-      rotationRef.current.rotX = Math.max(-0.75, Math.min(0.75, rotationRef.current.rotX + dy * 0.007));
+      rotationRef.current.rotX = Math.max(
+        -0.75,
+        Math.min(0.75, rotationRef.current.rotX + dy * 0.007),
+      );
       setLastMousePos({ x: e.clientX, y: e.clientY });
       return;
     }
 
-    const fov = 420;
+    const fov = 650;
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const cosY = Math.cos(rotationRef.current.rotY);
@@ -344,7 +381,7 @@ export const TeamNetwork3D: React.FC<{
       let py = node.y;
       let pz = node.z;
 
-      if (mode === '3D') {
+      if (mode === "3D") {
         const x1 = px * cosY - pz * sinY;
         const z1 = pz * cosY + px * sinY;
         const y2 = py * cosX - z1 * sinX;
@@ -354,7 +391,7 @@ export const TeamNetwork3D: React.FC<{
         pz = z2;
       }
 
-      const scale = mode === '3D' ? fov / (fov + pz + 210) : 1;
+      const scale = mode === "3D" ? fov / (fov + pz + 400) : 0.6;
       const screenX = centerX + px * scale;
       const screenY = centerY + py * scale;
       const currentRadius = Math.max(15, node.radius * scale);
@@ -366,7 +403,7 @@ export const TeamNetwork3D: React.FC<{
     }
 
     setHoveredNode(found);
-    canvas.style.cursor = found ? 'pointer' : isDragging ? 'grabbing' : 'grab';
+    canvas.style.cursor = found ? "pointer" : isDragging ? "grabbing" : "grab";
   };
 
   const handleMouseUp = () => setIsDragging(false);
@@ -394,15 +431,39 @@ export const TeamNetwork3D: React.FC<{
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         <div className="flex items-center p-1 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50">
-          <button onClick={() => setMode('3D')} className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === '3D' ? 'bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]' : 'text-slate-300 hover:text-white'}`}>3D Sphere</button>
-          <button onClick={() => setMode('2D')} className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === '2D' ? 'bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]' : 'text-slate-300 hover:text-white'}`}>2D Constellation</button>
+          <button
+            onClick={() => setMode("3D")}
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === "3D" ? "bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]" : "text-slate-300 hover:text-white"}`}
+          >
+            3D Sphere
+          </button>
+          <button
+            onClick={() => setMode("2D")}
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === "2D" ? "bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]" : "text-slate-300 hover:text-white"}`}
+          >
+            2D Constellation
+          </button>
         </div>
-        <button onClick={() => { rotationRef.current = { rotX: 0.22, rotY: 0.32 }; }} className="p-1.5 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50 text-slate-300 hover:text-[#00FFFF]">
+        <button
+          onClick={() => {
+            rotationRef.current = { rotX: 0.15, rotY: 0.25 };
+          }}
+          className="p-1.5 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50 text-slate-300 hover:text-[#00FFFF]"
+        >
           <RotateCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <canvas ref={canvasRef} style={{ height: `${height}px` }} className="w-full block touch-none" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleClick} />
+      <canvas
+        ref={canvasRef}
+        style={{ height: `${height}px` }}
+        className="w-full block touch-none"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onClick={handleClick}
+      />
     </div>
   );
 };
