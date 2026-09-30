@@ -24,14 +24,27 @@ export const TeamNetwork3D: React.FC<{
 }> = ({ onSelectStudent, height = 480 }) => {
   const { currentUser, students, setSelectedStudentForModal } = useApp();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   const [mode, setMode] = useState<'3D' | '2D'>('3D');
   const [hoveredNode, setHoveredNode] = useState<NetworkNode | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-
   const rotationRef = useRef({ rotX: 0.22, rotY: 0.32 });
   const autoRotateSpeed = useRef(0.0025);
+
+  // Generate 200 random 3D background stars for parallax depth
+  const backgroundStars = useMemo(() => {
+    const stars = [];
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: (Math.random() - 0.5) * 2000,
+        y: (Math.random() - 0.5) * 2000,
+        z: (Math.random() - 0.5) * 2000,
+        radius: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.8 + 0.2
+      });
+    }
+    return stars;
+  }, []);
 
   const otherStudents = useMemo(() => {
     return students
@@ -63,23 +76,19 @@ export const TeamNetwork3D: React.FC<{
       const y = (dist * Math.sin(theta) * Math.sin(phi)) * 0.72;
       const z = dist * Math.cos(phi);
 
-      // Classic Dark & Antique Gold Color Palette
-      let color = '#C5A880'; // Warm Muted Gold
-      if (score >= 90) color = '#E5C07B'; // Radiant Champagne Gold
-      else if (score >= 75) color = '#D4AF37'; // Imperial Gold
-      else if (score >= 60) color = '#967246'; // Antique Bronze
-      else color = '#6B7280'; // Titanium Slate
+      // Deep Space Neon Node Colors
+      let color = '#00FFFF'; // Bright Cyan
+      if (score >= 90) color = '#FF00FF'; // Bright Magenta
+      else if (score >= 75) color = '#38BDF8'; 
+      else if (score >= 60) color = '#818CF8'; 
+      else color = '#334155'; 
 
       list.push({
         student: item.student,
         matchScore: item.matchScore,
         matchLabel: item.matchLabel,
         confidence: item.confidence,
-        x,
-        y,
-        z,
-        screenX: 0,
-        screenY: 0,
+        x, y, z, screenX: 0, screenY: 0,
         radius: Math.max(15, Math.min(24, 12 + (score * 0.12))),
         color
       });
@@ -100,6 +109,7 @@ export const TeamNetwork3D: React.FC<{
     const render = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
+
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -122,6 +132,36 @@ export const TeamNetwork3D: React.FC<{
       const cosX = Math.cos(rotationRef.current.rotX);
       const sinX = Math.sin(rotationRef.current.rotX);
 
+      // --- 1. DRAW 3D PARALLAX BACKGROUND STARS ---
+      ctx.save();
+      backgroundStars.forEach(star => {
+        let px = star.x;
+        let py = star.y;
+        let pz = star.z;
+
+        if (mode === '3D') {
+          const x1 = px * cosY - pz * sinY;
+          const z1 = pz * cosY + px * sinY;
+          const y2 = py * cosX - z1 * sinX;
+          const z2 = z1 * cosX + py * sinX;
+          px = x1;
+          py = y2;
+          pz = z2;
+        }
+
+        const scale = mode === '3D' ? fov / (fov + pz + 800) : fov / (fov + 800);
+        if (scale < 0) return; // Behind camera
+
+        const screenX = centerX + px * scale;
+        const screenY = centerY + py * scale;
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, star.radius * scale, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${150 + Math.random()*105}, ${200 + Math.random()*55}, 255, ${star.alpha})`;
+        ctx.fill();
+      });
+      ctx.restore();
+
       const projectedNodes = nodes.map((node) => {
         let px = node.x;
         let py = node.y;
@@ -130,10 +170,8 @@ export const TeamNetwork3D: React.FC<{
         if (mode === '3D') {
           const x1 = px * cosY - pz * sinY;
           const z1 = pz * cosY + px * sinY;
-
           const y2 = py * cosX - z1 * sinX;
           const z2 = z1 * cosX + py * sinX;
-
           px = x1;
           py = y2;
           pz = z2;
@@ -146,35 +184,28 @@ export const TeamNetwork3D: React.FC<{
         const screenY = centerY + py * scale;
         const currentRadius = Math.max(12, node.radius * scale);
 
-        return {
-          ...node,
-          transformedZ: pz,
-          scale,
-          screenX,
-          screenY,
-          currentRadius
-        };
+        return { ...node, transformedZ: pz, scale, screenX, screenY, currentRadius };
       });
 
       projectedNodes.sort((a, b) => b.transformedZ - a.transformedZ);
 
-      // 1. Classical celestial rings
+      // --- 2. NEON CELESTIAL RINGS ---
       ctx.save();
       const ringDistances = [95, 175, 255];
       ringDistances.forEach((d, idx) => {
         ctx.beginPath();
         ctx.arc(centerX, centerY, d, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(212, 175, 55, ${0.05 + idx * 0.02})`;
+        ctx.strokeStyle = `rgba(255, 0, 255, ${0.15 + idx * 0.05})`;
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 7]);
         ctx.stroke();
       });
       ctx.restore();
 
-      // 2. Connecting fine golden threads
+      // --- 3. CONNECTING NEON THREADS ---
       projectedNodes.forEach((node) => {
         const isHovered = hoveredNode?.student.id === node.student.id;
-        const alpha = isHovered ? 0.8 : Math.max(0.12, (node.matchScore / 100) * 0.35);
+        const alpha = isHovered ? 1 : Math.max(0.2, (node.matchScore / 100) * 0.5);
 
         ctx.save();
         ctx.beginPath();
@@ -182,98 +213,89 @@ export const TeamNetwork3D: React.FC<{
         ctx.lineTo(node.screenX, node.screenY);
 
         const gradient = ctx.createLinearGradient(centerX, centerY, node.screenX, node.screenY);
-        gradient.addColorStop(0, 'rgba(229, 192, 123, 0.55)');
-        gradient.addColorStop(0.6, `rgba(180, 135, 65, ${alpha})`);
+        gradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
+        gradient.addColorStop(0.6, `rgba(0, 255, 255, ${alpha})`);
         gradient.addColorStop(1, `${node.color}`);
 
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = isHovered ? 2.2 : 1;
+        ctx.lineWidth = isHovered ? 2.5 : 1.2;
         ctx.stroke();
 
-        // Elegant warm energy pulse
         const particleT = (Math.sin(pulseAngle + node.matchScore) + 1) / 2;
         const partX = centerX + (node.screenX - centerX) * particleT;
         const partY = centerY + (node.screenY - centerY) * particleT;
 
         ctx.beginPath();
-        ctx.arc(partX, partY, 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = isHovered ? '#FFFFFF' : '#E8D390';
-        ctx.shadowColor = '#D4AF37';
-        ctx.shadowBlur = 5;
+        ctx.arc(partX, partY, 2, 0, Math.PI * 2);
+        ctx.fillStyle = isHovered ? '#FFFFFF' : '#00FFFF';
+        ctx.shadowColor = '#00FFFF';
+        ctx.shadowBlur = 10;
         ctx.fill();
-
         ctx.restore();
       });
 
-      // 3. Center Node (Current User) - Dark Imperial Seal
+      // --- 4. CENTER BLACK HOLE (YOU) ---
       ctx.save();
       const centerRadius = 28 + Math.sin(pulseAngle * 1.4) * 1.5;
+      const auraGrad = ctx.createRadialGradient(centerX, centerY, centerRadius * 0.6, centerX, centerY, centerRadius * 2.2);
+      auraGrad.addColorStop(0, 'rgba(255, 0, 255, 0.4)');
+      auraGrad.addColorStop(0.7, 'rgba(0, 255, 255, 0.1)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-      const auraGrad = ctx.createRadialGradient(
-        centerX,
-        centerY,
-        centerRadius * 0.6,
-        centerX,
-        centerY,
-        centerRadius * 1.8
-      );
-      auraGrad.addColorStop(0, 'rgba(212, 175, 55, 0.25)');
-      auraGrad.addColorStop(0.7, 'rgba(150, 114, 70, 0.08)');
-      auraGrad.addColorStop(1, 'rgba(9, 9, 11, 0)');
       ctx.fillStyle = auraGrad;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, centerRadius * 1.8, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, centerRadius * 2.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Core center disc
       ctx.beginPath();
       ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#18181F';
-      ctx.shadowColor = '#D4AF37';
-      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#050819';
+      ctx.shadowColor = '#FF00FF';
+      ctx.shadowBlur = 25;
       ctx.fill();
-      ctx.lineWidth = 1.8;
-      ctx.strokeStyle = '#E5C07B';
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#00FFFF';
       ctx.stroke();
 
-      ctx.fillStyle = '#FAF7F2';
+      ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('YOU', centerX, centerY - 4);
+
       ctx.font = '9px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#C5A880';
+      ctx.fillStyle = '#94A3B8';
       ctx.fillText(currentUser.name.split(' ')[0], centerX, centerY + 8);
       ctx.restore();
 
-      // 4. Draw Student Nodes
+      // --- 5. DRAW FOREGROUND NODES ---
       projectedNodes.forEach((node) => {
         const isHovered = hoveredNode?.student.id === node.student.id;
         ctx.save();
 
         if (isHovered || node.matchScore >= 90) {
           ctx.shadowColor = node.color;
-          ctx.shadowBlur = isHovered ? 16 : 8;
+          ctx.shadowBlur = isHovered ? 25 : 15;
         }
 
         ctx.beginPath();
         ctx.arc(node.screenX, node.screenY, node.currentRadius, 0, Math.PI * 2);
-        ctx.fillStyle = '#141419';
+        ctx.fillStyle = '#050819';
         ctx.fill();
 
-        ctx.lineWidth = isHovered ? 2 : 1.2;
+        ctx.lineWidth = isHovered ? 2.5 : 1.5;
         ctx.strokeStyle = isHovered ? '#FFFFFF' : node.color;
         ctx.stroke();
 
-        ctx.fillStyle = isHovered ? '#FAF7F2' : '#E8E4DD';
+        ctx.fillStyle = '#FFFFFF';
         ctx.font = `bold ${Math.max(9, Math.round(10 * (node.scale || 1)))}px "JetBrains Mono", monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(`${node.matchScore}%`, node.screenX, node.screenY);
 
         ctx.font = `${Math.max(9, Math.round(11 * (node.scale || 1)))}px "Plus Jakarta Sans", sans-serif`;
-        ctx.fillStyle = isHovered ? '#FAF7F2' : '#A1A1AA';
-        ctx.fillText(node.student.name.split(' ')[0], node.screenX, node.screenY + node.currentRadius + 13);
+        ctx.fillStyle = isHovered ? '#FFFFFF' : '#94A3B8';
+        ctx.fillText(node.student.name.split(' ')[0], node.screenX, node.screenY + node.currentRadius + 14);
 
         ctx.restore();
       });
@@ -282,11 +304,8 @@ export const TeamNetwork3D: React.FC<{
     };
 
     render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [nodes, currentUser, hoveredNode, isDragging, mode]);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [nodes, backgroundStars, currentUser, hoveredNode, isDragging, mode]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);
@@ -296,6 +315,7 @@ export const TeamNetwork3D: React.FC<{
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -303,11 +323,9 @@ export const TeamNetwork3D: React.FC<{
     if (isDragging && mode === '3D') {
       const dx = e.clientX - lastMousePos.x;
       const dy = e.clientY - lastMousePos.y;
+
       rotationRef.current.rotY += dx * 0.007;
-      rotationRef.current.rotX = Math.max(
-        -0.75,
-        Math.min(0.75, rotationRef.current.rotX + dy * 0.007)
-      );
+      rotationRef.current.rotX = Math.max(-0.75, Math.min(0.75, rotationRef.current.rotX + dy * 0.007));
       setLastMousePos({ x: e.clientX, y: e.clientY });
       return;
     }
@@ -321,7 +339,6 @@ export const TeamNetwork3D: React.FC<{
     const sinX = Math.sin(rotationRef.current.rotX);
 
     let found: NetworkNode | null = null;
-
     for (const node of nodes) {
       let px = node.x;
       let py = node.y;
@@ -342,13 +359,8 @@ export const TeamNetwork3D: React.FC<{
       const screenY = centerY + py * scale;
       const currentRadius = Math.max(15, node.radius * scale);
 
-      const dist = Math.hypot(mouseX - screenX, mouseY - screenY);
-      if (dist <= currentRadius + 5) {
-        found = {
-          ...node,
-          screenX,
-          screenY
-        };
+      if (Math.hypot(mouseX - screenX, mouseY - screenY) <= currentRadius + 5) {
+        found = { ...node, screenX, screenY };
         break;
       }
     }
@@ -357,130 +369,40 @@ export const TeamNetwork3D: React.FC<{
     canvas.style.cursor = found ? 'pointer' : isDragging ? 'grabbing' : 'grab';
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
   const handleClick = () => {
     if (hoveredNode) {
-      if (onSelectStudent) {
-        onSelectStudent(hoveredNode.student);
-      } else {
-        setSelectedStudentForModal(hoveredNode.student);
-      }
+      if (onSelectStudent) onSelectStudent(hoveredNode.student);
+      else setSelectedStudentForModal(hoveredNode.student);
     }
   };
 
   return (
-    <div className="relative w-full rounded-2xl bg-[#111115] border border-white/[0.08] overflow-hidden shadow-xl">
-      {/* Network Header Controls */}
+    <div className="relative w-full rounded-2xl bg-transparent border border-[#00FFFF]/30 overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-sm">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#16161C]/90 backdrop-blur-sm border border-white/[0.09]">
-          <Orbit className="w-3.5 h-3.5 text-[#E5C07B]" />
-          <span className="text-xs font-serif-title font-bold tracking-wide text-[#FAF7F2]">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
+          <Orbit className="w-3.5 h-3.5 text-[#00FFFF]" />
+          <span className="text-xs font-serif-title font-bold tracking-wide text-white">
             Celestial Teammate Orbit
           </span>
         </div>
-
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#A1A1AA]">
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-300">
           <span>Proximity indicates calculated compatibility</span>
         </div>
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <div className="flex items-center p-1 rounded-lg bg-[#0C0C10] border border-white/[0.06]">
-          <button
-            onClick={() => setMode('3D')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              mode === '3D'
-                ? 'bg-[#1E1E26] text-[#FAF7F2] shadow-sm'
-                : 'text-[#A1A1AA] hover:text-[#FAF7F2]'
-            }`}
-          >
-            3D Sphere
-          </button>
-          <button
-            onClick={() => setMode('2D')}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              mode === '2D'
-                ? 'bg-[#1E1E26] text-[#FAF7F2] shadow-sm'
-                : 'text-[#A1A1AA] hover:text-[#FAF7F2]'
-            }`}
-            title="2D Planar Fallback View"
-          >
-            2D Constellation
-          </button>
+        <div className="flex items-center p-1 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50">
+          <button onClick={() => setMode('3D')} className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === '3D' ? 'bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]' : 'text-slate-300 hover:text-white'}`}>3D Sphere</button>
+          <button onClick={() => setMode('2D')} className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${mode === '2D' ? 'bg-[#00FFFF]/20 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.4)] border border-[#00FFFF]' : 'text-slate-300 hover:text-white'}`}>2D Constellation</button>
         </div>
-
-        <button
-          onClick={() => {
-            rotationRef.current = { rotX: 0.22, rotY: 0.32 };
-          }}
-          className="p-1.5 rounded-lg bg-[#16161C] border border-white/[0.08] text-[#A1A1AA] hover:text-[#FAF7F2] transition-colors"
-          title="Reset Camera View"
-        >
+        <button onClick={() => { rotationRef.current = { rotX: 0.22, rotY: 0.32 }; }} className="p-1.5 rounded-lg bg-[#050819]/80 backdrop-blur-md border border-[#00FFFF]/50 text-slate-300 hover:text-[#00FFFF]">
           <RotateCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        style={{ height: `${height}px` }}
-        className="w-full block touch-none"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onClick={handleClick}
-      />
-
-      {/* Hover Info Tooltip */}
-      {hoveredNode && (
-        <div
-          className="absolute z-20 pointer-events-none p-3.5 rounded-xl bg-[#17171E]/95 backdrop-blur-md border border-[#D4AF37]/30 shadow-2xl transition-all"
-          style={{
-            left: `${Math.min(
-              hoveredNode.screenX + 15,
-              (canvasRef.current?.clientWidth || 500) - 230
-            )}px`,
-            top: `${Math.max(20, hoveredNode.screenY - 70)}px`,
-            width: '215px'
-          }}
-        >
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className="font-serif-title font-bold text-base text-[#FAF7F2] truncate">
-              {hoveredNode.student.name}
-            </span>
-            <span className="font-mono-nums font-bold text-xs px-2 py-0.5 rounded-md bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/25">
-              {hoveredNode.matchScore}%
-            </span>
-          </div>
-
-          <div className="text-xs text-[#E5C07B] mb-1 font-medium">
-            {hoveredNode.student.roles?.[0] || 'Contributor'}
-          </div>
-
-          <div className="text-[11px] text-[#A1A1AA] mb-2 truncate">
-            {hoveredNode.student.department}
-          </div>
-
-          <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[11px]">
-            <span className="text-[#C5A880] font-medium">{hoveredNode.matchLabel}</span>
-            <span className="text-[#71717A]">Click to inspect</span>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Hint */}
-      <div className="absolute bottom-3 left-4 right-4 z-10 flex items-center justify-between text-[11px] text-[#71717A] pointer-events-none">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-          <span>Click any teammate node to examine complementary synergies</span>
-        </div>
-        <div className="hidden sm:block">
-          <span>Drag with mouse to orbit in three dimensions</span>
-        </div>
-      </div>
+      <canvas ref={canvasRef} style={{ height: `${height}px` }} className="w-full block touch-none" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleClick} />
     </div>
   );
 };
