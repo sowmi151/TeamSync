@@ -45,7 +45,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center rounded-xl overflow-hidden shrink-0 border border-white/[12] shadow-sm ${sizeClasses[size]} ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-xl overflow-hidden shrink-0 border border-white/[0.12] shadow-sm ${sizeClasses[size]} ${className}`}
       style={{
         background: getGradient(name),
       }}
