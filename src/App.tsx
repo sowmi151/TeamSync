@@ -33,6 +33,7 @@ const MainContent: React.FC = () => {
     setSelectedProjectForModal,
     currentUser,
     resetDemoData,
+    updateCurrentUserProfile,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,8 +54,29 @@ const MainContent: React.FC = () => {
     setRequestTargetStudent(student);
   };
 
+  // --- THE MAGIC FIX IS HERE ---
   if (!isAuthenticated) {
-    return <LoginView onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <LoginView 
+        onLogin={(newName, newEmail) => {
+          setIsAuthenticated(true);
+          
+          // 1. If no name was typed (Log In mode), generate one from the email prefix
+          let finalName = newName;
+          if (!finalName && newEmail && newEmail !== currentUser.email) {
+            finalName = newEmail.split('@')[0]; // e.g. "akshyalux2619"
+          }
+
+          if (finalName || newEmail) {
+            updateCurrentUserProfile({
+              name: finalName || currentUser.name,
+              email: newEmail || currentUser.email,
+              avatarUrl: "" // 2. Clear Rahul's photo so your initials (AL) take over!
+            });
+          }
+        }} 
+      />
+    );
   }
 
   return (

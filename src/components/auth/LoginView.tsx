@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Mail, Lock, LogIn, Sparkles, User, UserPlus } from "lucide-react";
 
 interface LoginViewProps {
-  onLogin: () => void;
+  // We added name and email parameters here so we can pass them back to App.tsx
+  onLogin: (name?: string, email?: string) => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
@@ -16,7 +17,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     e.preventDefault();
     // Simulate authentication delay for effect
     setTimeout(() => {
-      onLogin();
+      // Pass the name (if in sign-up mode) and email to the parent component
+      onLogin(isLoginMode ? undefined : name, email);
     }, 400);
   };
 
@@ -41,7 +43,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         onMouseLeave={() => setIsHovering(false)}
       >
         {/* Animated Glass Glare */}
-        <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
+        <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-linear-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
 
         {/* Header */}
         <div className="text-center mb-8 relative z-10">
