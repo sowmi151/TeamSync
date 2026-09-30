@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { Project } from '../../types';
-import { calculateProjectMatch } from '../../utils/matching/projectMatching';
-import {
-  Plus,
-  Search,
-  Users
-} from 'lucide-react';
+import React, { useState } from "react";
+import { useApp } from "../../context/AppContext";
+import { Project } from "../../types";
+import { calculateProjectMatch } from "../../utils/matching/projectMatching";
+import { Plus, Search, Users } from "lucide-react";
 
 export const ProjectDiscoveryView: React.FC<{
   onOpenCreateProject: () => void;
@@ -15,16 +11,19 @@ export const ProjectDiscoveryView: React.FC<{
 }> = ({ onOpenCreateProject, onSelectProject, onRequestJoin }) => {
   const { projects, currentUser } = useApp();
 
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredProjects = projects.filter((project) => {
-    if (categoryFilter !== 'all' && project.category !== categoryFilter) return false;
+    if (categoryFilter !== "all" && project.category !== categoryFilter)
+      return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = project.title.toLowerCase().includes(q);
       const matchDesc = project.description.toLowerCase().includes(q);
-      const matchSkill = project.requiredSkills?.some((s) => s.name.toLowerCase().includes(q));
+      const matchSkill = project.requiredSkills?.some((s) =>
+        s.name.toLowerCase().includes(q),
+      );
       if (!matchTitle && !matchDesc && !matchSkill) return false;
     }
     return true;
@@ -39,13 +38,14 @@ export const ProjectDiscoveryView: React.FC<{
             Project & Capstone Initiatives
           </h2>
           <p className="text-xs sm:text-sm text-[#A1A1AA] mt-0.5">
-            Discover active campus initiatives, research labs, and hackathons actively seeking complementary skillsets.
+            Discover active campus initiatives, research labs, and hackathons
+            actively seeking complementary skillsets.
           </p>
         </div>
 
         <button
           onClick={onOpenCreateProject}
-          className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 text-xs font-semibold hover:border-[#D4AF37]/75 transition-all flex items-center gap-2 self-start sm:self-auto shadow-sm"
+          className="px-4 py-2.5 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 text-xs font-semibold hover:border-[#D4AF37]/75 transition-all flex items-center gap-2 self-start sm:self-auto shadow-sm"
         >
           <Plus className="w-4 h-4 text-[#E5C07B]" />
           <span>Publish Project Brief</span>
@@ -53,7 +53,7 @@ export const ProjectDiscoveryView: React.FC<{
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-xl bg-[#121217] border border-white/[0.08] flex flex-col md:flex-row items-center gap-3 shadow-sm">
+      <div className="p-4 rounded-xl bg-[#121217] border border-white/8 flex flex-col md:flex-row items-center gap-3 shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#71717A]" />
           <input
@@ -61,23 +61,30 @@ export const ProjectDiscoveryView: React.FC<{
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search projects by title, keywords, or required competency..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
           />
         </div>
 
         {/* Category Filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          {['all', 'Hackathon', 'Academic', 'Research', 'Startup', 'Competition'].map((cat) => (
+          {[
+            "all",
+            "Hackathon",
+            "Academic",
+            "Research",
+            "Startup",
+            "Competition",
+          ].map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
                 categoryFilter === cat
-                  ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35 shadow-sm'
-                  : 'bg-[#16161D] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06]'
+                  ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35 shadow-sm"
+                  : "bg-[#16161D] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06]"
               }`}
             >
-              {cat === 'all' ? 'All Domains' : cat}
+              {cat === "all" ? "All Domains" : cat}
             </button>
           ))}
         </div>
@@ -88,12 +95,14 @@ export const ProjectDiscoveryView: React.FC<{
         {filteredProjects.map((project) => {
           const matchResult = calculateProjectMatch(currentUser, project);
           const isFull = project.members.length >= project.teamSize;
-          const isMember = project.members.some((m) => m.studentId === currentUser.id);
+          const isMember = project.members.some(
+            (m) => m.studentId === currentUser.id,
+          );
 
           return (
             <div
               key={project.id}
-              className="rounded-xl bg-[#121217] p-5 border border-white/[0.08] hover:border-[#D4AF37]/30 transition-all flex flex-col justify-between shadow-sm hover:shadow-xl"
+              className="rounded-xl bg-[#121217] p-5 border border-white/8 hover:border-[#D4AF37]/30 transition-all flex flex-col justify-between shadow-sm hover:shadow-xl"
             >
               <div>
                 {/* Category & Team Scale */}
@@ -144,17 +153,17 @@ export const ProjectDiscoveryView: React.FC<{
                       <span
                         key={sk.name}
                         className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 ${
-                          sk.status === 'Covered'
-                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/40'
-                            : sk.status === 'Weak'
-                            ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35'
-                            : 'bg-rose-950/80 text-rose-300 border border-rose-800/40'
+                          sk.status === "Covered"
+                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/40"
+                            : sk.status === "Weak"
+                              ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
+                              : "bg-rose-950/80 text-rose-300 border border-rose-800/40"
                         }`}
                         title={`Requirement: ${sk.minProficiency}%, You: ${sk.studentProficiency}%`}
                       >
-                        {sk.status === 'Covered' && '✓'}
-                        {sk.status === 'Weak' && '⚠'}
-                        {sk.status === 'Missing' && '✕'}
+                        {sk.status === "Covered" && "✓"}
+                        {sk.status === "Weak" && "⚠"}
+                        {sk.status === "Missing" && "✕"}
                         <span>{sk.name}</span>
                       </span>
                     ))}
@@ -163,10 +172,10 @@ export const ProjectDiscoveryView: React.FC<{
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-white/8 flex items-center justify-between gap-2">
                 <button
                   onClick={() => onSelectProject(project)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#FAF7F2] border border-white/[0.08]"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#FAF7F2] border border-white/8"
                 >
                   Examine Brief
                 </button>
@@ -180,7 +189,7 @@ export const ProjectDiscoveryView: React.FC<{
                 ) : (
                   <button
                     onClick={() => onRequestJoin(project)}
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65"
+                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65"
                   >
                     Request Entry
                   </button>

@@ -1,7 +1,7 @@
-import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { Avatar } from '../common/Avatar';
-import { calculateStudentMatch } from '../../utils/matching/studentMatching';
+import React from "react";
+import { useApp } from "../../context/AppContext";
+import { Avatar } from "../common/Avatar";
+import { calculateStudentMatch } from "../../utils/matching/studentMatching";
 import {
   AlertCircle,
   Briefcase,
@@ -9,8 +9,8 @@ import {
   GraduationCap,
   Sparkles,
   Trash2,
-  X
-} from 'lucide-react';
+  X,
+} from "lucide-react";
 
 export const CompareView: React.FC<{
   onOpenMessage: (student: any) => void;
@@ -22,13 +22,13 @@ export const CompareView: React.FC<{
     comparisonList,
     addToComparison,
     removeFromComparison,
-    clearComparison
+    clearComparison,
   } = useApp();
 
   const allComparedSkills = Array.from(
     new Set(
-      comparisonList.flatMap((s) => (s.skills || []).map((sk) => sk.name))
-    )
+      comparisonList.flatMap((s) => (s.skills || []).map((sk) => sk.name)),
+    ),
   ).sort();
 
   return (
@@ -40,7 +40,8 @@ export const CompareView: React.FC<{
             Candidate Comparative Matrix
           </h2>
           <p className="text-xs sm:text-sm text-[#A1A1AA] mt-0.5">
-            Side-by-side analysis of complementary synergies, technical proficiencies, and missing data transparency.
+            Side-by-side analysis of complementary synergies, technical
+            proficiencies, and missing data transparency.
           </p>
         </div>
 
@@ -48,7 +49,7 @@ export const CompareView: React.FC<{
           {comparisonList.length > 0 && (
             <button
               onClick={clearComparison}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#14141A] hover:bg-[#1C1C24] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.08] transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#14141A] hover:bg-[#1C1C24] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-all flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear Matrix</span>
@@ -63,7 +64,7 @@ export const CompareView: React.FC<{
                   if (!id) return;
                   const found = students.find((s) => s.id === id);
                   if (found) addToComparison(found);
-                  e.target.value = '';
+                  e.target.value = "";
                 }}
                 defaultValue=""
                 className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#121217] text-[#FAF7F2] border border-white/[0.12] cursor-pointer focus:outline-none"
@@ -75,7 +76,7 @@ export const CompareView: React.FC<{
                   .filter((s) => !comparisonList.some((c) => c.id === s.id))
                   .map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.roles?.[0] || 'Student'})
+                      {s.name} ({s.roles?.[0] || "Student"})
                     </option>
                   ))}
               </select>
@@ -85,31 +86,32 @@ export const CompareView: React.FC<{
       </div>
 
       {comparisonList.length === 0 ? (
-        <div className="p-12 rounded-xl bg-[#121217] text-center border border-white/[0.08] space-y-4">
+        <div className="p-12 rounded-xl bg-[#121217] text-center border border-white/8 space-y-4">
           <Sparkles className="w-8 h-8 text-[#D4AF37] mx-auto opacity-75" />
           <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2]">
             No Candidates Selected for Matrix
           </h3>
           <p className="text-xs text-[#A1A1AA] max-w-md mx-auto">
-            Select 2 to 4 scholars from the Discover directory to evaluate pairwise compatibility, skill overlaps, and schedule alignments.
+            Select 2 to 4 scholars from the Discover directory to evaluate
+            pairwise compatibility, skill overlaps, and schedule alignments.
           </p>
           <div className="flex justify-center gap-2 pt-2">
             {students.slice(0, 3).map((s) => (
               <button
                 key={s.id}
                 onClick={() => addToComparison(s)}
-                className="px-3 py-1.5 rounded-lg bg-[#181822] text-xs font-medium text-[#FAF7F2] border border-white/[0.08] hover:border-[#D4AF37]/40"
+                className="px-3 py-1.5 rounded-lg bg-[#181822] text-xs font-medium text-[#FAF7F2] border border-white/8 hover:border-[#D4AF37]/40"
               >
-                + Compare {s.name.split(' ')[0]}
+                + Compare {s.name.split(" ")[0]}
               </button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl bg-[#121217] border border-white/[0.08] shadow-xl">
+        <div className="overflow-x-auto rounded-xl bg-[#121217] border border-white/8 shadow-xl">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="bg-[#15151B] border-b border-white/[0.08]">
+              <tr className="bg-[#15151B] border-b border-white/8">
                 <th className="p-4 w-48 text-[10px] font-bold text-[#71717A] uppercase tracking-widest font-mono">
                   Attribute / Candidate
                 </th>
@@ -147,9 +149,12 @@ export const CompareView: React.FC<{
 
                       {!isSelf && (
                         <div className="mt-3 p-2 rounded-lg bg-[#0C0C10] border border-white/[0.06] flex items-center justify-between">
-                          <span className="text-[11px] text-[#71717A]">Synergy with You:</span>
+                          <span className="text-[11px] text-[#71717A]">
+                            Synergy with You:
+                          </span>
                           <span className="font-mono-nums font-bold text-xs text-[#E5C07B]">
-                            {match.overallScore}% ({match.matchLabel.split(' ')[0]})
+                            {match.overallScore}% (
+                            {match.matchLabel.split(" ")[0]})
                           </span>
                         </div>
                       )}
@@ -169,7 +174,7 @@ export const CompareView: React.FC<{
                 {comparisonList.map((student) => (
                   <td key={student.id} className="p-4 text-[#FAF7F2]">
                     {student.roles && student.roles.length > 0 ? (
-                      student.roles.join(', ')
+                      student.roles.join(", ")
                     ) : (
                       <span className="text-[#E5C07B] italic flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
@@ -189,7 +194,9 @@ export const CompareView: React.FC<{
                 {comparisonList.map((student) => (
                   <td key={student.id} className="p-4 text-[#FAF7F2]">
                     {student.experience ? (
-                      <span className="font-medium text-[#FAF7F2]">{student.experience}</span>
+                      <span className="font-medium text-[#FAF7F2]">
+                        {student.experience}
+                      </span>
                     ) : (
                       <span className="text-[#E5C07B] italic flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
@@ -214,7 +221,7 @@ export const CompareView: React.FC<{
                           {student.availability.hoursPerWeek} hrs/week
                         </span>
                         <div className="text-[11px] text-[#A1A1AA] mt-0.5">
-                          {student.availability.preferences.join(', ')}
+                          {student.availability.preferences.join(", ")}
                         </div>
                       </div>
                     ) : (
@@ -265,7 +272,10 @@ export const CompareView: React.FC<{
                   const isSelf = student.id === currentUser.id;
                   if (isSelf) {
                     return (
-                      <td key={student.id} className="p-4 text-[#71717A] italic">
+                      <td
+                        key={student.id}
+                        className="p-4 text-[#71717A] italic"
+                      >
                         Self profile
                       </td>
                     );
@@ -275,7 +285,8 @@ export const CompareView: React.FC<{
                       {match.complementaryPairs.length > 0 ? (
                         <div className="space-y-1">
                           <span className="font-semibold text-[#E8D390]">
-                            {match.complementaryPairs[0].studentASkill} + {match.complementaryPairs[0].studentBSkill}
+                            {match.complementaryPairs[0].studentASkill} +{" "}
+                            {match.complementaryPairs[0].studentBSkill}
                           </span>
                           <div className="text-[11px] text-[#A1A1AA]">
                             {match.complementaryPairs[0].explanation}
@@ -292,7 +303,7 @@ export const CompareView: React.FC<{
               </tr>
 
               {/* Skills Matrix Breakdown */}
-              <tr className="bg-[#15151B] border-t border-b border-white/[0.08]">
+              <tr className="bg-[#15151B] border-t border-b border-white/8">
                 <td
                   colSpan={comparisonList.length + 1}
                   className="py-2 px-4 font-mono font-bold text-[#E5C07B] uppercase tracking-widest text-[10px]"
@@ -302,11 +313,16 @@ export const CompareView: React.FC<{
               </tr>
 
               {allComparedSkills.map((skillName) => (
-                <tr key={skillName} className="hover:bg-[#16161D]/50 transition-colors">
-                  <td className="p-4 font-medium text-[#FAF7F2]">{skillName}</td>
+                <tr
+                  key={skillName}
+                  className="hover:bg-[#16161D]/50 transition-colors"
+                >
+                  <td className="p-4 font-medium text-[#FAF7F2]">
+                    {skillName}
+                  </td>
                   {comparisonList.map((student) => {
                     const sk = (student.skills || []).find(
-                      (s) => s.name.toLowerCase() === skillName.toLowerCase()
+                      (s) => s.name.toLowerCase() === skillName.toLowerCase(),
                     );
                     return (
                       <td key={student.id} className="p-4">
@@ -319,7 +335,7 @@ export const CompareView: React.FC<{
                             </div>
                             <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
+                                className="h-full rounded-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
                                 style={{ width: `${sk.proficiency}%` }}
                               />
                             </div>
@@ -344,19 +360,21 @@ export const CompareView: React.FC<{
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onOpenRequest(student)}
-                            className="px-3 py-1.5 rounded-md bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 text-xs font-semibold hover:border-[#D4AF37]/60"
+                            className="px-3 py-1.5 rounded-md bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 text-xs font-semibold hover:border-[#D4AF37]/60"
                           >
                             Invite
                           </button>
                           <button
                             onClick={() => onOpenMessage(student)}
-                            className="px-3 py-1.5 rounded-md bg-[#181822] hover:bg-[#20202A] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                            className="px-3 py-1.5 rounded-md bg-[#181822] hover:bg-[#20202A] text-xs text-[#FAF7F2] border border-white/8"
                           >
                             Chat
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#71717A]">Self record</span>
+                        <span className="text-xs text-[#71717A]">
+                          Self record
+                        </span>
                       )}
                     </td>
                   );

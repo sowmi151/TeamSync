@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { Project, ProjectSkillRequirement } from '../../types';
-import { Plus, Trash2, X, Sparkles } from 'lucide-react';
+import React, { useState } from "react";
+import { useApp } from "../../context/AppContext";
+import { Project, ProjectSkillRequirement } from "../../types";
+import { Plus, Trash2, X, Sparkles } from "lucide-react";
 
 interface CreateProjectModalProps {
   onClose: () => void;
@@ -10,60 +10,62 @@ interface CreateProjectModalProps {
 
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
-  onCreated
+  onCreated,
 }) => {
   const { currentUser, createProject } = useApp();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<Project['category']>('Hackathon');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<Project["category"]>("Hackathon");
   const [teamSize, setTeamSize] = useState<number>(4);
 
-  const [requiredSkills, setRequiredSkills] = useState<ProjectSkillRequirement[]>([
-    { name: 'Python', minProficiency: 75, isRequired: true },
-    { name: 'React', minProficiency: 75, isRequired: true },
-    { name: 'UI/UX', minProficiency: 70, isRequired: false }
+  const [requiredSkills, setRequiredSkills] = useState<
+    ProjectSkillRequirement[]
+  >([
+    { name: "Python", minProficiency: 75, isRequired: true },
+    { name: "React", minProficiency: 75, isRequired: true },
+    { name: "UI/UX", minProficiency: 70, isRequired: false },
   ]);
 
-  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillName, setNewSkillName] = useState("");
   const [newSkillMinProf, setNewSkillMinProf] = useState(70);
   const [newSkillIsRequired, setNewSkillIsRequired] = useState(true);
 
   const [requiredRoles, setRequiredRoles] = useState<string[]>([
-    'Backend Developer',
-    'Frontend Developer',
-    'UI/UX Designer'
+    "Backend Developer",
+    "Frontend Developer",
+    "UI/UX Designer",
   ]);
-  const [newRole, setNewRole] = useState('');
+  const [newRole, setNewRole] = useState("");
 
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
-    setRequiredSkills(prev => [
+    setRequiredSkills((prev) => [
       ...prev,
       {
         name: newSkillName.trim(),
         minProficiency: newSkillMinProf,
-        isRequired: newSkillIsRequired
-      }
+        isRequired: newSkillIsRequired,
+      },
     ]);
-    setNewSkillName('');
+    setNewSkillName("");
     setNewSkillMinProf(70);
   };
 
   const handleRemoveSkill = (index: number) => {
-    setRequiredSkills(prev => prev.filter((_, i) => i !== index));
+    setRequiredSkills((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddRole = () => {
     if (!newRole.trim()) return;
     if (!requiredRoles.includes(newRole.trim())) {
-      setRequiredRoles(prev => [...prev, newRole.trim()]);
+      setRequiredRoles((prev) => [...prev, newRole.trim()]);
     }
-    setNewRole('');
+    setNewRole("");
   };
 
   const handleRemoveRole = (role: string) => {
-    setRequiredRoles(prev => prev.filter(r => r !== role));
+    setRequiredRoles((prev) => prev.filter((r) => r !== role));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,7 +80,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       teamSize,
       requiredSkills,
       requiredRoles,
-      status: 'open'
+      status: "open",
     });
 
     if (onCreated) {
@@ -90,13 +92,16 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#121217] border border-white/[0.12] shadow-2xl p-6 my-8 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/8 mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#E5C07B]" />
             <div>
-              <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2]">Publish Collegiate Project Brief</h3>
+              <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2]">
+                Publish Collegiate Project Brief
+              </h3>
               <p className="text-xs text-[#A1A1AA]">
-                Define skill criteria, target roles, and team scale for intelligent teammate matching.
+                Define skill criteria, target roles, and team scale for
+                intelligent teammate matching.
               </p>
             </div>
           </div>
@@ -119,7 +124,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Autonomous Rover Vision or Decentralized Credential Ledger"
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs sm:text-sm text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs sm:text-sm text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
             />
           </div>
 
@@ -133,7 +138,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="State the core technical problem, architecture approach, and project goals..."
-              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs sm:text-sm text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs sm:text-sm text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
             />
           </div>
 
@@ -145,7 +150,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none"
               >
                 <option value="Academic">Academic Capstone</option>
                 <option value="Hackathon">Hackathon Sprint</option>
@@ -169,7 +174,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   onChange={(e) => setTeamSize(Number(e.target.value))}
                   className="flex-1 accent-[#D4AF37]"
                 />
-                <span className="font-mono-nums font-bold text-sm text-[#FAF7F2] w-12 text-center py-1 rounded-md bg-[#0C0C10] border border-white/[0.08]">
+                <span className="font-mono-nums font-bold text-sm text-[#FAF7F2] w-12 text-center py-1 rounded-md bg-[#0C0C10] border border-white/8">
                   {teamSize}
                 </span>
               </div>
@@ -187,15 +192,17 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   className="p-3 rounded-lg bg-[#0C0C10] border border-white/[0.06] flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-[#FAF7F2]">{req.name}</span>
+                    <span className="font-medium text-[#FAF7F2]">
+                      {req.name}
+                    </span>
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded ${
                         req.isRequired
-                          ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35'
-                          : 'bg-[#181822] text-[#71717A]'
+                          ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
+                          : "bg-[#181822] text-[#71717A]"
                       }`}
                     >
-                      {req.isRequired ? 'Mandatory' : 'Preferred'}
+                      {req.isRequired ? "Mandatory" : "Preferred"}
                     </span>
                   </div>
 
@@ -215,13 +222,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               ))}
             </div>
 
-            <div className="p-3 rounded-lg bg-[#15151C] border border-white/[0.08] flex flex-wrap items-center gap-2">
+            <div className="p-3 rounded-lg bg-[#15151C] border border-white/8 flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 value={newSkillName}
                 onChange={(e) => setNewSkillName(e.target.value)}
                 placeholder="Competency (e.g. PyTorch, Docker)"
-                className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8"
               />
               <div className="flex items-center gap-1.5 text-xs text-[#71717A]">
                 <span>Min:</span>
@@ -231,7 +238,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   max={100}
                   value={newSkillMinProf}
                   onChange={(e) => setNewSkillMinProf(Number(e.target.value))}
-                  className="w-14 px-2 py-1 rounded-md bg-[#0C0C10] text-xs font-mono-nums text-[#FAF7F2] border border-white/[0.08]"
+                  className="w-14 px-2 py-1 rounded-md bg-[#0C0C10] text-xs font-mono-nums text-[#FAF7F2] border border-white/8"
                 />
                 <span>%</span>
               </div>
@@ -247,7 +254,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddSkill}
-                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/[0.08] flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/8 flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5 text-[#E5C07B]" />
                 <span>Add Criterion</span>
@@ -263,7 +270,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               {requiredRoles.map((role) => (
                 <span
                   key={role}
-                  className="px-3 py-1 rounded-lg bg-[#14141A] border border-white/[0.08] text-xs text-[#FAF7F2] flex items-center gap-1.5"
+                  className="px-3 py-1 rounded-lg bg-[#14141A] border border-white/8 text-xs text-[#FAF7F2] flex items-center gap-1.5"
                 >
                   <span>{role}</span>
                   <button
@@ -283,29 +290,29 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
                 placeholder="e.g. Embedded Firmware Engineer"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8"
               />
               <button
                 type="button"
                 onClick={handleAddRole}
-                className="px-3.5 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/[0.08]"
+                className="px-3.5 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/8"
               >
                 + Add Role
               </button>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/[0.08] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-white/8 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.08]"
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm"
+              className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm"
             >
               Publish Brief & Begin Matching
             </button>

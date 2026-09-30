@@ -1,9 +1,9 @@
-import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { Project, Student } from '../../types';
-import { calculateProjectMatch } from '../../utils/matching/projectMatching';
-import { Avatar } from '../common/Avatar';
-import { Crown, Sparkles, X } from 'lucide-react';
+import React from "react";
+import { useApp } from "../../context/AppContext";
+import { Project, Student } from "../../types";
+import { calculateProjectMatch } from "../../utils/matching/projectMatching";
+import { Avatar } from "../common/Avatar";
+import { Crown, Sparkles, X } from "lucide-react";
 
 export const ProjectDetailsModal: React.FC<{
   project: Project | null;
@@ -23,7 +23,7 @@ export const ProjectDetailsModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#121217] border border-white/[0.12] shadow-2xl p-6 my-8 max-h-[90vh] overflow-y-auto space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-white/[0.08]">
+        <div className="flex items-start justify-between pb-4 border-b border-white/8">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] uppercase font-bold tracking-widest text-[#E5C07B] font-mono">
@@ -33,7 +33,9 @@ export const ProjectDetailsModal: React.FC<{
                 · Initiated {project.createdAt}
               </span>
             </div>
-            <h2 className="font-serif-title font-bold text-2xl text-[#FAF7F2]">{project.title}</h2>
+            <h2 className="font-serif-title font-bold text-2xl text-[#FAF7F2]">
+              {project.title}
+            </h2>
           </div>
 
           <button
@@ -57,7 +59,9 @@ export const ProjectDetailsModal: React.FC<{
         {/* Alignment */}
         <div className="p-4 rounded-xl bg-[#0D0D11] border border-[#D4AF37]/25 flex items-center justify-between">
           <div>
-            <div className="text-xs text-[#71717A]">Your Profile Alignment for this Brief</div>
+            <div className="text-xs text-[#71717A]">
+              Your Profile Alignment for this Brief
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="font-mono-nums font-bold text-2xl text-[#FAF7F2]">
                 {matchResult.overallScore}%
@@ -86,7 +90,8 @@ export const ProjectDetailsModal: React.FC<{
                 <div className="w-36">
                   <span className="font-medium text-[#FAF7F2]">{sk.name}</span>
                   <div className="text-[10px] text-[#71717A] font-mono">
-                    {sk.isRequired ? 'Mandatory' : 'Preferred'} (Min: {sk.minProficiency}%)
+                    {sk.isRequired ? "Mandatory" : "Preferred"} (Min:{" "}
+                    {sk.minProficiency}%)
                   </div>
                 </div>
 
@@ -100,11 +105,11 @@ export const ProjectDetailsModal: React.FC<{
                   <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        sk.status === 'Covered'
-                          ? 'bg-emerald-500'
-                          : sk.status === 'Weak'
-                          ? 'bg-[#E5C07B]'
-                          : 'bg-rose-500'
+                        sk.status === "Covered"
+                          ? "bg-emerald-500"
+                          : sk.status === "Weak"
+                            ? "bg-[#E5C07B]"
+                            : "bg-rose-500"
                       }`}
                       style={{ width: `${sk.studentProficiency}%` }}
                     />
@@ -113,11 +118,11 @@ export const ProjectDetailsModal: React.FC<{
 
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${
-                    sk.status === 'Covered'
-                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      : sk.status === 'Weak'
-                      ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35'
-                      : 'bg-rose-950 text-rose-300 border border-rose-800'
+                    sk.status === "Covered"
+                      ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                      : sk.status === "Weak"
+                        ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
+                        : "bg-rose-950 text-rose-300 border border-rose-800"
                   }`}
                 >
                   {sk.status}
@@ -157,7 +162,9 @@ export const ProjectDetailsModal: React.FC<{
                       <span className="font-serif-title font-bold text-sm text-[#FAF7F2] truncate">
                         {student.name}
                       </span>
-                      {isLeader && <Crown className="w-3 h-3 text-[#E5C07B] shrink-0" />}
+                      {isLeader && (
+                        <Crown className="w-3 h-3 text-[#E5C07B] shrink-0" />
+                      )}
                     </div>
                     <div className="text-[11px] text-[#C5A880] truncate">
                       {m.role}
@@ -170,11 +177,11 @@ export const ProjectDetailsModal: React.FC<{
         </div>
 
         {/* Actions Footer */}
-        <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
+        <div className="pt-4 border-t border-white/8 flex items-center justify-between">
           <button
             onClick={() => {
               onClose();
-              setActiveTab('build-team');
+              setActiveTab("build-team");
             }}
             className="text-xs text-[#E5C07B] hover:underline flex items-center gap-1"
           >
@@ -185,7 +192,7 @@ export const ProjectDetailsModal: React.FC<{
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.08]"
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8"
             >
               Close
             </button>
@@ -196,7 +203,7 @@ export const ProjectDetailsModal: React.FC<{
                   onClose();
                   onRequestJoin(project);
                 }}
-                className="px-5 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75"
+                className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75"
               >
                 Request Admission
               </button>

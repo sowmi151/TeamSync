@@ -1,12 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
-import { Student } from '../../types';
-import { Avatar } from '../common/Avatar';
-import {
-  MessageSquare,
-  Search,
-  Send
-} from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { useApp } from "../../context/AppContext";
+import { Student } from "../../types";
+import { Avatar } from "../common/Avatar";
+import { MessageSquare, Search, Send } from "lucide-react";
 
 export const MessagingView: React.FC<{
   initialSelectedStudent?: Student | null;
@@ -20,7 +16,10 @@ export const MessagingView: React.FC<{
       if (m.receiverId === currentUser.id) partnerIds.add(m.senderId);
     });
 
-    if (initialSelectedStudent && initialSelectedStudent.id !== currentUser.id) {
+    if (
+      initialSelectedStudent &&
+      initialSelectedStudent.id !== currentUser.id
+    ) {
       partnerIds.add(initialSelectedStudent.id);
     }
     if (partnerIds.size === 0) {
@@ -31,15 +30,18 @@ export const MessagingView: React.FC<{
   }, [messages, currentUser, students, initialSelectedStudent]);
 
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>(
-    initialSelectedStudent?.id || conversationPartners[0]?.id || ''
+    initialSelectedStudent?.id || conversationPartners[0]?.id || "",
   );
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [inputText, setInputText] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [inputText, setInputText] = useState("");
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPartner = useMemo(() => {
-    return students.find((s) => s.id === selectedPartnerId) || conversationPartners[0];
+    return (
+      students.find((s) => s.id === selectedPartnerId) ||
+      conversationPartners[0]
+    );
   }, [students, selectedPartnerId, conversationPartners]);
 
   const activeConversation = useMemo(() => {
@@ -47,25 +49,30 @@ export const MessagingView: React.FC<{
     return messages
       .filter(
         (m) =>
-          (m.senderId === currentUser.id && m.receiverId === selectedPartner.id) ||
-          (m.senderId === selectedPartner.id && m.receiverId === currentUser.id)
+          (m.senderId === currentUser.id &&
+            m.receiverId === selectedPartner.id) ||
+          (m.senderId === selectedPartner.id &&
+            m.receiverId === currentUser.id),
       )
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
   }, [messages, currentUser, selectedPartner]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConversation]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !selectedPartner) return;
     sendMessage(selectedPartner.id, inputText.trim());
-    setInputText('');
+    setInputText("");
   };
 
   const filteredPartners = conversationPartners.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -77,7 +84,8 @@ export const MessagingView: React.FC<{
             Collegiate Dispatch & Correspondence
           </h2>
           <p className="text-xs text-[#A1A1AA]">
-            Direct peer messaging for coordinating hackathon project scopes and mutual skill synergy.
+            Direct peer messaging for coordinating hackathon project scopes and
+            mutual skill synergy.
           </p>
         </div>
         <div className="text-[11px] text-[#E5C07B] bg-[#1C1812] px-3 py-1 rounded-md border border-[#D4AF37]/25 self-start sm:self-auto font-mono">
@@ -85,10 +93,10 @@ export const MessagingView: React.FC<{
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[600px] rounded-xl bg-[#121217] border border-white/[0.08] overflow-hidden shadow-xl">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[600px] rounded-xl bg-[#121217] border border-white/8 overflow-hidden shadow-xl">
         {/* Left: Conversation List */}
-        <div className="md:col-span-4 bg-[#0E0E12] border-r border-white/[0.08] flex flex-col h-full">
-          <div className="p-3.5 border-b border-white/[0.08]">
+        <div className="md:col-span-4 bg-[#0E0E12] border-r border-white/8 flex flex-col h-full">
+          <div className="p-3.5 border-b border-white/8">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-[#71717A]" />
               <input
@@ -96,7 +104,7 @@ export const MessagingView: React.FC<{
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search correspondence..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
               />
             </div>
           </div>
@@ -107,8 +115,10 @@ export const MessagingView: React.FC<{
               const lastMsg = messages
                 .filter(
                   (m) =>
-                    (m.senderId === currentUser.id && m.receiverId === partner.id) ||
-                    (m.senderId === partner.id && m.receiverId === currentUser.id)
+                    (m.senderId === currentUser.id &&
+                      m.receiverId === partner.id) ||
+                    (m.senderId === partner.id &&
+                      m.receiverId === currentUser.id),
                 )
                 .slice(-1)[0];
 
@@ -118,8 +128,8 @@ export const MessagingView: React.FC<{
                   onClick={() => setSelectedPartnerId(partner.id)}
                   className={`w-full p-3.5 text-left transition-colors flex items-start gap-3 ${
                     isSelected
-                      ? 'bg-[#181822] border-l-2 border-[#D4AF37]'
-                      : 'hover:bg-[#131318]'
+                      ? "bg-[#181822] border-l-2 border-[#D4AF37]"
+                      : "hover:bg-[#131318]"
                   }`}
                 >
                   <Avatar
@@ -133,13 +143,15 @@ export const MessagingView: React.FC<{
                       <span className="font-serif-title font-bold text-sm text-[#FAF7F2] truncate">
                         {partner.name}
                       </span>
-                      <span className="text-[10px] text-emerald-400 font-mono">Active</span>
+                      <span className="text-[10px] text-emerald-400 font-mono">
+                        Active
+                      </span>
                     </div>
                     <div className="text-[11px] text-[#C5A880] truncate">
-                      {partner.roles?.[0] || 'Student'}
+                      {partner.roles?.[0] || "Student"}
                     </div>
                     <p className="text-[11px] text-[#71717A] truncate mt-0.5">
-                      {lastMsg ? lastMsg.content : 'No correspondence yet'}
+                      {lastMsg ? lastMsg.content : "No correspondence yet"}
                     </p>
                   </div>
                 </button>
@@ -153,7 +165,7 @@ export const MessagingView: React.FC<{
           {selectedPartner ? (
             <>
               {/* Chat Header */}
-              <div className="p-3.5 px-4 border-b border-white/[0.08] bg-[#15151C] flex items-center justify-between">
+              <div className="p-3.5 px-4 border-b border-white/8 bg-[#15151C] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar
                     name={selectedPartner.name}
@@ -185,21 +197,21 @@ export const MessagingView: React.FC<{
                   return (
                     <div
                       key={msg.id}
-                      className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
+                      className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
                     >
                       <div
                         className={`max-w-md p-3 rounded-xl text-xs leading-relaxed shadow-sm ${
                           isMine
-                            ? 'bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/30 rounded-br-none'
-                            : 'bg-[#181820] text-[#E8E4DD] border border-white/[0.07] rounded-bl-none'
+                            ? "bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/30 rounded-br-none"
+                            : "bg-[#181820] text-[#E8E4DD] border border-white/[0.07] rounded-bl-none"
                         }`}
                       >
                         {msg.content}
                       </div>
                       <span className="text-[10px] text-[#71717A] mt-1 px-1 font-mono">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </span>
                     </div>
@@ -211,18 +223,18 @@ export const MessagingView: React.FC<{
               {/* Input Footer */}
               <form
                 onSubmit={handleSend}
-                className="p-3 border-t border-white/[0.08] bg-[#14141A] flex items-center gap-2"
+                className="p-3 border-t border-white/8 bg-[#14141A] flex items-center gap-2"
               >
                 <input
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Dispatch message to ${selectedPartner.name.split(' ')[0]}...`}
-                  className="flex-1 px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+                  placeholder={`Dispatch message to ${selectedPartner.name.split(" ")[0]}...`}
+                  className="flex-1 px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
                 />
                 <button
                   type="submit"
-                  className="p-2.5 rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65 transition-all"
+                  className="p-2.5 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65 transition-all"
                 >
                   <Send className="w-4 h-4 text-[#E5C07B]" />
                 </button>

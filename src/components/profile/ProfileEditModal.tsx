@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { ExperienceLevel, StudentSkill } from '../../types';
-import { Plus, Trash2, X, Sparkles } from 'lucide-react';
+import React, { useState } from "react";
+import { useApp } from "../../context/AppContext";
+import { ExperienceLevel, StudentSkill } from "../../types";
+import { Plus, Trash2, X, Sparkles } from "lucide-react";
 
-export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({
+  onClose,
+}) => {
   const { currentUser, updateCurrentUserProfile } = useApp();
 
   const [name, setName] = useState(currentUser.name);
@@ -11,37 +13,44 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
   const [year, setYear] = useState(currentUser.year);
   const [bio, setBio] = useState(currentUser.bio);
   const [experience, setExperience] = useState<ExperienceLevel>(
-    currentUser.experience || 'Intermediate'
+    currentUser.experience || "Intermediate",
   );
   const [hoursPerWeek, setHoursPerWeek] = useState(
-    currentUser.availability?.hoursPerWeek || 15
+    currentUser.availability?.hoursPerWeek || 15,
   );
   const [availabilityPrefs, setAvailabilityPrefs] = useState<string[]>(
-    currentUser.availability?.preferences || ['Weekdays', 'Evenings']
+    currentUser.availability?.preferences || ["Weekdays", "Evenings"],
   );
-  const [roles, setRoles] = useState<string[]>(currentUser.roles || ['Full Stack Developer']);
-  const [newRole, setNewRole] = useState('');
+  const [roles, setRoles] = useState<string[]>(
+    currentUser.roles || ["Full Stack Developer"],
+  );
+  const [newRole, setNewRole] = useState("");
 
-  const [interests, setInterests] = useState<string[]>(currentUser.interests || []);
-  const [newInterest, setNewInterest] = useState('');
+  const [interests, setInterests] = useState<string[]>(
+    currentUser.interests || [],
+  );
+  const [newInterest, setNewInterest] = useState("");
 
-  const [skills, setSkills] = useState<StudentSkill[]>(currentUser.skills || []);
-  const [newSkillName, setNewSkillName] = useState('');
+  const [skills, setSkills] = useState<StudentSkill[]>(
+    currentUser.skills || [],
+  );
+  const [newSkillName, setNewSkillName] = useState("");
   const [newSkillProf, setNewSkillProf] = useState(80);
-  const [newSkillCat, setNewSkillCat] = useState<StudentSkill['category']>('Backend');
+  const [newSkillCat, setNewSkillCat] =
+    useState<StudentSkill["category"]>("Backend");
 
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
     const exists = skills.find(
-      (s) => s.name.toLowerCase() === newSkillName.trim().toLowerCase()
+      (s) => s.name.toLowerCase() === newSkillName.trim().toLowerCase(),
     );
     if (exists) {
       setSkills(
         skills.map((s) =>
           s.name.toLowerCase() === newSkillName.trim().toLowerCase()
             ? { ...s, proficiency: newSkillProf, category: newSkillCat }
-            : s
-        )
+            : s,
+        ),
       );
     } else {
       setSkills([
@@ -49,11 +58,11 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
         {
           name: newSkillName.trim(),
           proficiency: newSkillProf,
-          category: newSkillCat
-        }
+          category: newSkillCat,
+        },
       ]);
     }
-    setNewSkillName('');
+    setNewSkillName("");
     setNewSkillProf(80);
   };
 
@@ -66,7 +75,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
     if (!roles.includes(newRole.trim())) {
       setRoles([...roles, newRole.trim()]);
     }
-    setNewRole('');
+    setNewRole("");
   };
 
   const handleRemoveRole = (r: string) => {
@@ -78,7 +87,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
     if (!interests.includes(newInterest.trim())) {
       setInterests([...interests, newInterest.trim()]);
     }
-    setNewInterest('');
+    setNewInterest("");
   };
 
   const handleRemoveInterest = (i: string) => {
@@ -87,7 +96,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
 
   const toggleAvailabilityPref = (pref: string) => {
     setAvailabilityPrefs((prev) =>
-      prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref]
+      prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref],
     );
   };
 
@@ -101,11 +110,11 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
       experience,
       availability: {
         hoursPerWeek,
-        preferences: availabilityPrefs
+        preferences: availabilityPrefs,
       },
       roles,
       interests,
-      skills
+      skills,
     });
     onClose();
   };
@@ -113,7 +122,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#121217] border border-white/[0.12] shadow-2xl p-6 my-8 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/8 mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#E5C07B]" />
             <div>
@@ -121,7 +130,8 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                 Calibrate Profile & Competencies
               </h3>
               <p className="text-xs text-[#A1A1AA]">
-                Modifications instantly recalculate multi-factor compatibility across all scholars and project briefs.
+                Modifications instantly recalculate multi-factor compatibility
+                across all scholars and project briefs.
               </p>
             </div>
           </div>
@@ -145,7 +155,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none focus:border-[#D4AF37]/40"
+                className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none focus:border-[#D4AF37]/40"
               />
             </div>
 
@@ -156,7 +166,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none"
               >
                 <option value="1st Year">1st Year</option>
                 <option value="2nd Year">2nd Year</option>
@@ -175,7 +185,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               type="text"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none"
             />
           </div>
 
@@ -187,12 +197,12 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               rows={2}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08] focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8 focus:outline-none"
             />
           </div>
 
           {/* Skill Management & Proficiency */}
-          <div className="p-4 rounded-xl bg-[#0C0C10] border border-white/[0.08] space-y-3">
+          <div className="p-4 rounded-xl bg-[#0C0C10] border border-white/8 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-bold text-[#E5C07B] uppercase tracking-widest font-mono">
                 Competencies & Proficiencies (0 - 100)
@@ -209,8 +219,12 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                   className="p-3 rounded-lg bg-[#14141A] border border-white/[0.06] flex items-center justify-between gap-4 text-xs"
                 >
                   <div className="flex items-center gap-2 w-32 truncate">
-                    <span className="font-medium text-[#FAF7F2] truncate">{skill.name}</span>
-                    <span className="text-[10px] text-[#71717A]">({skill.category})</span>
+                    <span className="font-medium text-[#FAF7F2] truncate">
+                      {skill.name}
+                    </span>
+                    <span className="text-[10px] text-[#71717A]">
+                      ({skill.category})
+                    </span>
                   </div>
 
                   <div className="flex-1 flex items-center gap-3">
@@ -223,8 +237,10 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                         const val = Number(e.target.value);
                         setSkills(
                           skills.map((s) =>
-                            s.name === skill.name ? { ...s, proficiency: val } : s
-                          )
+                            s.name === skill.name
+                              ? { ...s, proficiency: val }
+                              : s,
+                          ),
                         );
                       }}
                       className="flex-1 accent-[#D4AF37]"
@@ -251,12 +267,12 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                 value={newSkillName}
                 onChange={(e) => setNewSkillName(e.target.value)}
                 placeholder="Competency (e.g. PyTorch, Rust)"
-                className="flex-1 min-w-[130px] px-3 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                className="flex-1 min-w-[130px] px-3 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/8"
               />
               <select
                 value={newSkillCat}
                 onChange={(e) => setNewSkillCat(e.target.value as any)}
-                className="px-2.5 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                className="px-2.5 py-1.5 rounded-lg bg-[#14141A] text-xs text-[#FAF7F2] border border-white/8"
               >
                 <option value="Frontend">Frontend</option>
                 <option value="Backend">Backend</option>
@@ -281,7 +297,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               <button
                 type="button"
                 onClick={handleAddSkill}
-                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/[0.08] flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/8 flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5 text-[#E5C07B]" />
                 <span>Add Competency</span>
@@ -299,7 +315,7 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                 {roles.map((r) => (
                   <span
                     key={r}
-                    className="px-2.5 py-1 rounded-lg bg-[#14141A] border border-white/[0.08] text-xs text-[#FAF7F2] flex items-center gap-1.5"
+                    className="px-2.5 py-1 rounded-lg bg-[#14141A] border border-white/8 text-xs text-[#FAF7F2] flex items-center gap-1.5"
                   >
                     <span>{r}</span>
                     <button
@@ -318,12 +334,12 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
                   placeholder="e.g. Systems Engineer"
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8"
                 />
                 <button
                   type="button"
                   onClick={handleAddRole}
-                  className="px-3 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/[0.08]"
+                  className="px-3 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/8"
                 >
                   Add
                 </button>
@@ -337,12 +353,20 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               <select
                 value={experience}
                 onChange={(e) => setExperience(e.target.value as any)}
-                className="w-full px-3 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/[0.08]"
+                className="w-full px-3 py-2 rounded-lg bg-[#0C0C10] text-xs text-[#FAF7F2] border border-white/8"
               >
-                <option value="Beginner">Beginner (Foundational coursework)</option>
-                <option value="Intermediate">Intermediate (Practicum, hackathons)</option>
-                <option value="Advanced">Advanced (Production systems, published)</option>
-                <option value="Expert">Expert (Principal engineer, research lead)</option>
+                <option value="Beginner">
+                  Beginner (Foundational coursework)
+                </option>
+                <option value="Intermediate">
+                  Intermediate (Practicum, hackathons)
+                </option>
+                <option value="Advanced">
+                  Advanced (Production systems, published)
+                </option>
+                <option value="Expert">
+                  Expert (Principal engineer, research lead)
+                </option>
               </select>
 
               <div className="mt-4">
@@ -367,7 +391,13 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
               Availability Days
             </label>
             <div className="flex flex-wrap gap-2">
-              {['Weekdays', 'Evenings', 'Weekends', 'Late Nights', 'Flexible'].map((pref) => {
+              {[
+                "Weekdays",
+                "Evenings",
+                "Weekends",
+                "Late Nights",
+                "Flexible",
+              ].map((pref) => {
                 const isSelected = availabilityPrefs.includes(pref);
                 return (
                   <button
@@ -376,8 +406,8 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
                     onClick={() => toggleAvailabilityPref(pref)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       isSelected
-                        ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35 shadow-sm'
-                        : 'bg-[#14141A] text-[#71717A] border border-white/[0.06]'
+                        ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35 shadow-sm"
+                        : "bg-[#14141A] text-[#71717A] border border-white/[0.06]"
                     }`}
                   >
                     {pref}
@@ -388,17 +418,17 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({ onClose })
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-white/[0.08] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-white/8 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.08]"
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm"
+              className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm"
             >
               Commit Calibration
             </button>

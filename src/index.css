@@ -1,17 +1,27 @@
 @import "tailwindcss";
 
 /* 1. THE REALISTIC NEBULA BACKGROUND */
-html, body, #root {
+html,
+body,
+#root {
   background-color: #030008 !important;
-  background-image: 
-    url('/galaxy-bg.jpg'),
-    radial-gradient(ellipse at 25% 60%, rgba(147, 51, 234, 0.3) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 40%, rgba(37, 99, 235, 0.3) 0%, transparent 55%) !important;
+  background-image:
+    url("/galaxy-bg.jpg"),
+    radial-gradient(
+      ellipse at 25% 60%,
+      rgba(147, 51, 234, 0.3) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 75% 40%,
+      rgba(37, 99, 235, 0.3) 0%,
+      transparent 55%
+    ) !important;
   background-size: cover !important;
   background-position: center !important;
   background-attachment: fixed !important;
   background-blend-mode: screen;
-  color: #F8FAFC !important;
+  color: #f8fafc !important;
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
@@ -22,13 +32,24 @@ html, body, #root {
 body::before {
   content: "";
   position: fixed;
-  top: -50%; left: -50%; width: 200%; height: 200%;
-  background-image: 
-    radial-gradient(2px 2px at 40px 60px, #fff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 150px 20px, #fff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 90px 140px, #fff, rgba(0,0,0,0)),
-    radial-gradient(3px 3px at 250px 90px, rgba(37, 99, 235, 0.8), rgba(0,0,0,0)),
-    radial-gradient(3px 3px at 300px 250px, rgba(147, 51, 234, 0.8), rgba(0,0,0,0));
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image:
+    radial-gradient(2px 2px at 40px 60px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 150px 20px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 90px 140px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(
+      3px 3px at 250px 90px,
+      rgba(37, 99, 235, 0.8),
+      rgba(0, 0, 0, 0)
+    ),
+    radial-gradient(
+      3px 3px at 300px 250px,
+      rgba(147, 51, 234, 0.8),
+      rgba(0, 0, 0, 0)
+    );
   background-repeat: repeat;
   background-size: 300px 300px;
   animation: starDrift 200s linear infinite;
@@ -37,73 +58,130 @@ body::before {
 }
 
 @keyframes starDrift {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.bg-\[\#09090B\] { background: transparent !important; }
+.bg-\[\#09090B\] {
+  background: transparent !important;
+}
 
 /* 3. ULTRA-SHEER 3D GLASS CARDS */
-.bg-\[\#121217\], .bg-\[\#111115\], .bg-\[\#0E0E12\], .bg-\[\#0C0C10\], .bg-\[\#15151C\], .bg-\[\#111116\] {
-  background: rgba(10, 14, 30, 0.3) !important; 
+.bg-\[\#121217\],
+.bg-\[\#111115\],
+.bg-\[\#0E0E12\],
+.bg-\[\#0C0C10\],
+.bg-\[\#15151C\],
+.bg-\[\#111116\] {
+  background: rgba(10, 14, 30, 0.3) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-right: 1px solid rgba(0, 0, 0, 0.6) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.8) !important;
-  box-shadow: 
+  box-shadow:
     0 25px 40px -10px rgba(0, 0, 0, 0.8),
     inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
   border-radius: 16px !important;
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease !important;
+  transition:
+    transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.3s ease !important;
 }
 
-.bg-\[\#121217\]:hover, .bg-\[\#111115\]:hover, .bg-\[\#0E0E12\]:hover, .bg-\[\#0C0C10\]:hover, .bg-\[\#15151C\]:hover, .bg-\[\#111116\]:hover {
+.bg-\[\#121217\]:hover,
+.bg-\[\#111115\]:hover,
+.bg-\[\#0E0E12\]:hover,
+.bg-\[\#0C0C10\]:hover,
+.bg-\[\#15151C\]:hover,
+.bg-\[\#111116\]:hover {
   transform: translateY(-6px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 35px 50px -15px rgba(0, 0, 0, 0.9),
     inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
   z-index: 10;
 }
 
 /* 4. NEON TEXT & ACCENTS */
-.text-\[\#E5C07B\], .text-\[\#D4AF37\], .text-\[\#C5A880\], .text-\[\#E8D390\] { 
-  color: #38BDF8 !important; 
+.text-\[\#E5C07B\],
+.text-\[\#D4AF37\],
+.text-\[\#C5A880\],
+.text-\[\#E8D390\] {
+  color: #38bdf8 !important;
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
 }
 
-.border-\[\#D4AF37\]\/30, .border-\[\#D4AF37\]\/40, .border-\[\#D4AF37\]\/25 { 
-  border-color: rgba(168, 85, 247, 0.5) !important; 
+.border-\[\#D4AF37\]\/30,
+.border-\[\#D4AF37\]\/40,
+.border-\[\#D4AF37\]\/25 {
+  border-color: rgba(168, 85, 247, 0.5) !important;
 }
 
-.text-\[\#FAF7F2\] { color: #FFFFFF !important; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-.text-\[\#A1A1AA\], .text-\[\#71717A\] { color: #CBD5E1 !important; }
+.text-\[\#FAF7F2\] {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.text-\[\#A1A1AA\],
+.text-\[\#71717A\] {
+  color: #cbd5e1 !important;
+}
 
 /* 5. 3D GLOWING PILL BUTTONS */
-.bg-gradient-to-r.from-\[\#2B2317\] {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(56, 189, 248, 0.8)) !important;
+.bg-linear-to-r.from-\[\#2B2317\] {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.8),
+    rgba(56, 189, 248, 0.8)
+  ) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.6) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.6) !important;
-  color: #FFF !important; 
+  color: #fff !important;
   font-weight: 700 !important;
-  box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+  box-shadow:
+    0 5px 15px rgba(168, 85, 247, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
   backdrop-filter: blur(10px) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease !important;
 }
-.bg-gradient-to-r.from-\[\#2B2317\]:hover {
+.bg-linear-to-r.from-\[\#2B2317\]:hover {
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5) !important;
+  box-shadow:
+    0 10px 25px rgba(56, 189, 248, 0.6),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5) !important;
 }
 
 /* 6. GALAXY PROGRESS BARS */
-.from-\[\#967246\] { --tw-gradient-from: #A855F7 !important; }
-.to-\[\#E5C07B\] { --tw-gradient-to: #38BDF8 !important; box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
-.via-\[\#B8860B\] { --tw-gradient-stops: #A855F7, #38BDF8 !important; }
+.from-\[\#967246\] {
+  --tw-gradient-from: #a855f7 !important;
+}
+.to-\[\#E5C07B\] {
+  --tw-gradient-to: #38bdf8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+.via-\[\#B8860B\] {
+  --tw-gradient-stops: #a855f7, #38bdf8 !important;
+}
 
 /* 7. CUSTOM SCROLLBAR */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1); }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}

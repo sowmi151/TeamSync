@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { useApp } from '../../context/AppContext';
-import { Student } from '../../types';
-import { calculateStudentMatch } from '../../utils/matching/studentMatching';
-import { Avatar } from '../common/Avatar';
+import React, { useState, useMemo } from "react";
+import { useApp } from "../../context/AppContext";
+import { Student } from "../../types";
+import { calculateStudentMatch } from "../../utils/matching/studentMatching";
+import { Avatar } from "../common/Avatar";
 import {
   Award,
   Bookmark,
@@ -15,8 +15,8 @@ import {
   MessageSquare,
   Sparkles,
   UserPlus,
-  X
-} from 'lucide-react';
+  X,
+} from "lucide-react";
 
 interface StudentProfileModalProps {
   student: Student | null;
@@ -31,7 +31,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   onClose,
   onOpenMessage,
   onOpenRequest,
-  onEditProfile
+  onEditProfile,
 }) => {
   const {
     currentUser,
@@ -39,10 +39,12 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     toggleShortlist,
     comparisonList,
     addToComparison,
-    removeFromComparison
+    removeFromComparison,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'matchBreakdown'>('profile');
+  const [activeTab, setActiveTab] = useState<"profile" | "matchBreakdown">(
+    "profile",
+  );
 
   if (!student) return null;
 
@@ -53,13 +55,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   }, [currentUser, student]);
 
   const saved = isShortlisted(student.id);
-  const inComparison = comparisonList.some(s => s.id === student.id);
+  const inComparison = comparisonList.some((s) => s.id === student.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#121217] border border-white/[0.12] shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
         {/* Top Header Bar */}
-        <div className="p-6 border-b border-white/[0.08] flex items-start justify-between gap-4 bg-[#15151C]">
+        <div className="p-6 border-b border-white/8 flex items-start justify-between gap-4 bg-[#15151C]">
           <div className="flex items-center gap-4">
             <Avatar
               name={student.name}
@@ -69,7 +71,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-serif-title font-bold text-2xl text-[#FAF7F2]">{student.name}</h2>
+                <h2 className="font-serif-title font-bold text-2xl text-[#FAF7F2]">
+                  {student.name}
+                </h2>
                 {isSelf && (
                   <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-[#2A2318] text-[#E5C07B] border border-[#D4AF37]/30">
                     Self
@@ -78,7 +82,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </div>
               <div className="flex items-center gap-2 text-xs text-[#A1A1AA] mt-0.5">
                 <span>{student.year}</span>
-                <span aria-hidden="true" className="text-[#71717A]">·</span>
+                <span aria-hidden="true" className="text-[#71717A]">
+                  ·
+                </span>
                 <span>{student.department}</span>
               </div>
             </div>
@@ -94,23 +100,23 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
         {/* Tab Switcher: Overview vs Match Breakdown */}
         {!isSelf && (
-          <div className="px-6 pt-3 border-b border-white/[0.08] flex items-center gap-6 bg-[#121217]">
+          <div className="px-6 pt-3 border-b border-white/8 flex items-center gap-6 bg-[#121217]">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => setActiveTab("profile")}
               className={`pb-2.5 text-xs font-semibold tracking-wide border-b-2 transition-all ${
-                activeTab === 'profile'
-                  ? 'border-[#E5C07B] text-[#FAF7F2]'
-                  : 'border-transparent text-[#71717A] hover:text-[#FAF7F2]'
+                activeTab === "profile"
+                  ? "border-[#E5C07B] text-[#FAF7F2]"
+                  : "border-transparent text-[#71717A] hover:text-[#FAF7F2]"
               }`}
             >
               Curriculum & Profile
             </button>
             <button
-              onClick={() => setActiveTab('matchBreakdown')}
+              onClick={() => setActiveTab("matchBreakdown")}
               className={`pb-2.5 text-xs font-semibold tracking-wide border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === 'matchBreakdown'
-                  ? 'border-[#E5C07B] text-[#FAF7F2]'
-                  : 'border-transparent text-[#71717A] hover:text-[#FAF7F2]'
+                activeTab === "matchBreakdown"
+                  ? "border-[#E5C07B] text-[#FAF7F2]"
+                  : "border-transparent text-[#71717A] hover:text-[#FAF7F2]"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-[#E5C07B]" />
@@ -121,7 +127,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-[#121217]">
-          {activeTab === 'profile' ? (
+          {activeTab === "profile" ? (
             <>
               {/* Bio */}
               <div>
@@ -129,7 +135,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   Statement of Intent
                 </h4>
                 <p className="text-sm text-[#E8E4DD] leading-relaxed">
-                  {student.bio || 'No personal statement provided.'}
+                  {student.bio || "No personal statement provided."}
                 </p>
               </div>
 
@@ -141,7 +147,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     <span>Specialization</span>
                   </div>
                   <div className="text-xs font-medium text-[#FAF7F2]">
-                    {student.roles?.join(', ') || (
+                    {student.roles?.join(", ") || (
                       <span className="text-[#71717A] italic">Unspecified</span>
                     )}
                   </div>
@@ -154,7 +160,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   </div>
                   <div className="text-xs font-medium text-[#FAF7F2]">
                     {student.experience || (
-                      <span className="text-[#71717A] italic">Not specified</span>
+                      <span className="text-[#71717A] italic">
+                        Not specified
+                      </span>
                     )}
                   </div>
                 </div>
@@ -166,9 +174,11 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   </div>
                   <div className="text-xs font-medium text-[#FAF7F2]">
                     {student.availability ? (
-                      `${student.availability.hoursPerWeek} hrs/wk (${student.availability.preferences.join(', ')})`
+                      `${student.availability.hoursPerWeek} hrs/wk (${student.availability.preferences.join(", ")})`
                     ) : (
-                      <span className="text-[#71717A] italic">Not specified</span>
+                      <span className="text-[#71717A] italic">
+                        Not specified
+                      </span>
                     )}
                   </div>
                 </div>
@@ -195,14 +205,16 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     student.skills.map((skill) => (
                       <div key={skill.name} className="space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="font-medium text-[#FAF7F2]">{skill.name}</span>
+                          <span className="font-medium text-[#FAF7F2]">
+                            {skill.name}
+                          </span>
                           <span className="font-mono-nums text-[#C5A880]">
                             {skill.proficiency}%
                           </span>
                         </div>
                         <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
+                            className="h-full rounded-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
                             style={{ width: `${skill.proficiency}%` }}
                           />
                         </div>
@@ -226,7 +238,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     student.interests.map((interest) => (
                       <span
                         key={interest}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-[#16161D] text-[#E8E4DD] border border-white/[0.08]"
+                        className="px-2.5 py-1 text-xs rounded-lg bg-[#16161D] text-[#E8E4DD] border border-white/8"
                       >
                         {interest}
                       </span>
@@ -254,7 +266,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                         </li>
                       ))
                     ) : (
-                      <li className="text-[#71717A] italic">No projects recorded.</li>
+                      <li className="text-[#71717A] italic">
+                        No projects recorded.
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -272,7 +286,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                         </li>
                       ))
                     ) : (
-                      <li className="text-[#71717A] italic">No honours recorded.</li>
+                      <li className="text-[#71717A] italic">
+                        No honours recorded.
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -288,7 +304,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     <span className="font-mono-nums font-bold text-2xl text-[#FAF7F2]">
                       {matchResult.overallScore}%
                     </span>
-                    <span className="text-[9px] uppercase tracking-widest font-mono text-[#E5C07B]">Index</span>
+                    <span className="text-[9px] uppercase tracking-widest font-mono text-[#E5C07B]">
+                      Index
+                    </span>
                   </div>
                   <div>
                     <h3 className="font-serif-title font-bold text-lg text-[#FAF7F2]">
@@ -297,7 +315,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     <div className="flex items-center gap-2 text-xs text-[#A1A1AA] mt-0.5">
                       <span>Reliability:</span>
                       <span className="text-emerald-400 font-medium">
-                        {matchResult.confidenceLabel} ({matchResult.confidenceScore}%)
+                        {matchResult.confidenceLabel} (
+                        {matchResult.confidenceScore}%)
                       </span>
                     </div>
                   </div>
@@ -335,7 +354,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="p-3 rounded-xl bg-[#0D0D11] border border-white/[0.06]">
-                        <span className="text-[#71717A] block mb-1">Your Primary Asset:</span>
+                        <span className="text-[#71717A] block mb-1">
+                          Your Primary Asset:
+                        </span>
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-[#FAF7F2]">
                             {matchResult.skillDifferences.myStrongest.name}
@@ -347,7 +368,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                       </div>
 
                       <div className="p-3 rounded-xl bg-[#0D0D11] border border-white/[0.06]">
-                        <span className="text-[#71717A] block mb-1">Their Primary Asset:</span>
+                        <span className="text-[#71717A] block mb-1">
+                          Their Primary Asset:
+                        </span>
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-[#FAF7F2]">
                             {matchResult.skillDifferences.theirStrongest.name}
@@ -376,12 +399,14 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               <div>
                 <h4 className="text-[10px] font-bold text-[#71717A] uppercase tracking-widest mb-2 font-mono flex items-center justify-between">
                   <span>Factor Weight Distribution Matrix</span>
-                  <span className="text-[#C5A880] lowercase">Normalized to 100%</span>
+                  <span className="text-[#C5A880] lowercase">
+                    Normalized to 100%
+                  </span>
                 </h4>
 
-                <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#0E0E12]">
+                <div className="overflow-x-auto rounded-xl border border-white/8 bg-[#0E0E12]">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#15151B] text-[#71717A] border-b border-white/[0.08]">
+                    <thead className="bg-[#15151B] text-[#71717A] border-b border-white/8">
                       <tr>
                         <th className="py-2.5 px-3">Factor</th>
                         <th className="py-2.5 px-3">Validity</th>
@@ -394,25 +419,34 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     <tbody className="divide-y divide-white/[0.06] text-[#FAF7F2]">
                       {Object.entries(matchResult.factors).map(([key, f]) => {
                         const labels: Record<string, string> = {
-                          skill: 'Skill Compatibility',
-                          complementary: 'Complementary Skills',
-                          role: 'Role Compatibility',
-                          interest: 'Interests',
-                          availability: 'Availability',
-                          experience: 'Experience'
+                          skill: "Skill Compatibility",
+                          complementary: "Complementary Skills",
+                          role: "Role Compatibility",
+                          interest: "Interests",
+                          availability: "Availability",
+                          experience: "Experience",
                         };
                         return (
-                          <tr key={key} className={f.isValid ? '' : 'text-[#71717A] bg-[#09090C]'}>
-                            <td className="py-2 px-3 font-medium">{labels[key] || key}</td>
+                          <tr
+                            key={key}
+                            className={
+                              f.isValid ? "" : "text-[#71717A] bg-[#09090C]"
+                            }
+                          >
+                            <td className="py-2 px-3 font-medium">
+                              {labels[key] || key}
+                            </td>
                             <td className="py-2 px-3 text-[11px]">
                               {f.isValid ? (
                                 <span className="text-emerald-400">Valid</span>
                               ) : (
-                                <span className="text-[#E5C07B]">Redistributed</span>
+                                <span className="text-[#E5C07B]">
+                                  Redistributed
+                                </span>
                               )}
                             </td>
                             <td className="py-2 px-3 text-right font-mono-nums">
-                              {f.isValid ? `${f.score}%` : '—'}
+                              {f.isValid ? `${f.score}%` : "—"}
                             </td>
                             <td className="py-2 px-3 text-right font-mono-nums text-[#71717A]">
                               {Math.round(f.originalWeight * 100)}%
@@ -435,7 +469,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         </div>
 
         {/* Modal Bottom Actions */}
-        <div className="p-4 border-t border-white/[0.08] bg-[#0E0E12] flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-white/8 bg-[#0E0E12] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {!isSelf && (
               <>
@@ -443,10 +477,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   onClick={() => toggleShortlist(student.id)}
                   className={`p-2.5 rounded-lg transition-all ${
                     saved
-                      ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35'
-                      : 'bg-[#181820] text-[#71717A] hover:text-[#FAF7F2] border border-white/[0.06]'
+                      ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
+                      : "bg-[#181820] text-[#71717A] hover:text-[#FAF7F2] border border-white/[0.06]"
                   }`}
-                  title={saved ? 'Remove from Shortlist' : 'Save to Shortlist'}
+                  title={saved ? "Remove from Shortlist" : "Save to Shortlist"}
                 >
                   {saved ? (
                     <BookmarkCheck className="w-4 h-4" />
@@ -462,8 +496,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   }}
                   className={`p-2.5 rounded-lg transition-all ${
                     inComparison
-                      ? 'bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35'
-                      : 'bg-[#181820] text-[#71717A] hover:text-[#FAF7F2] border border-white/[0.06]'
+                      ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
+                      : "bg-[#181820] text-[#71717A] hover:text-[#FAF7F2] border border-white/[0.06]"
                   }`}
                   title="Compare Candidate"
                 >
@@ -488,7 +522,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     onClose();
                     onOpenMessage(student);
                   }}
-                  className="py-2 px-4 rounded-lg bg-[#181822] hover:bg-[#20202C] text-[#FAF7F2] border border-white/[0.08] text-xs font-medium flex items-center gap-1.5"
+                  className="py-2 px-4 rounded-lg bg-[#181822] hover:bg-[#20202C] text-[#FAF7F2] border border-white/8 text-xs font-medium flex items-center gap-1.5"
                 >
                   <MessageSquare className="w-3.5 h-3.5 text-[#C5A880]" />
                   <span>Message</span>
@@ -499,7 +533,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     onClose();
                     onOpenRequest(student);
                   }}
-                  className="py-2 px-4 rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/70 text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                  className="py-2 px-4 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/70 text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   <UserPlus className="w-3.5 h-3.5 text-[#E5C07B]" />
                   <span>Invite to Squad</span>

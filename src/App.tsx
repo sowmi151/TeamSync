@@ -131,12 +131,12 @@ const MainContent: React.FC = () => {
               </h2>
               <button
                 onClick={() => setShowEditProfile(true)}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 text-xs font-semibold shadow-sm transition-all"
+                className="px-4 py-2 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 text-xs font-semibold shadow-sm transition-all"
               >
                 Calibrate Profile & Skills
               </button>
             </div>
-            <div className="p-6 rounded-xl bg-[#121217] border border-white/[0.08] shadow-lg">
+            <div className="p-6 rounded-xl bg-[#121217] border border-white/8 shadow-lg">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-xl bg-[#1C1812] border border-[#D4AF37]/30 flex items-center justify-center font-serif-title font-bold text-2xl text-[#E5C07B]">
                   {currentUser.name.slice(0, 2).toUpperCase()}
@@ -169,7 +169,7 @@ const MainContent: React.FC = () => {
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
+                        className="h-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
                         style={{ width: `${s.proficiency}%` }}
                       />
                     </div>
@@ -182,7 +182,7 @@ const MainContent: React.FC = () => {
         {activeTab === "test-suite" && <AlgorithmTestSuite />}
       </main>
 
-      <footer className="mt-16 border-t border-white/[0.08] bg-[#0A0A0D]/50 py-8 text-xs text-[#71717A]">
+      <footer className="mt-16 border-t border-white/8 bg-[#0A0A0D]/50 py-8 text-xs text-[#71717A]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-serif-title font-bold text-sm tracking-tight text-[#FAF7F2]">
