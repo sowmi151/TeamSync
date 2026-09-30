@@ -10,10 +10,12 @@ import {
   Shield,
   Sparkles,
   X,
+  LogOut,
 } from "lucide-react";
 import { Avatar } from "./Avatar";
 
 interface HeaderProps {
+  onLogout?: () => void;
   onOpenDownloadZip: () => void;
   onOpenCreateProject: () => void;
   onOpenDatabaseModal: () => void;
@@ -21,6 +23,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  onLogout,
   onOpenDownloadZip,
   onOpenCreateProject,
   onOpenDatabaseModal,
@@ -123,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Notifications Popover */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-[#141418] border border-white/12 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center justify-between pb-3 border-b border-whit.e/[0.08] mb-3">
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-3">
                   <div className="flex items-center gap-2">
                     <span className="font-serif-title font-bold text-base text-[#FAF7F2]">
                       Notifications
@@ -245,6 +248,19 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     ))}
                   </div>
+
+                  {/* LOGOUT BUTTON */}
+                  {onLogout && (
+                    <div className="border-t border-white/10 mt-2 pt-2">
+                      <button
+                        onClick={onLogout}
+                        className="w-full text-left px-2.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -288,6 +304,16 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           ))}
+          {/* Mobile Logout Option */}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full text-left px-3 py-2 mt-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          )}
         </div>
       )}
     </header>

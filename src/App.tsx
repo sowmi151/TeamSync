@@ -19,8 +19,9 @@ import { ProfileEditModal } from "./components/profile/ProfileEditModal";
 import { DownloadZipModal } from "./components/export/DownloadZipModal";
 import { DatabaseModal } from "./components/database/DatabaseModal";
 import { PythonModal } from "./components/python/PythonModal";
+import { LoginView } from "./components/auth/LoginView";
 import { Student } from "./types";
-import { Code, Database, Download, RotateCcw } from "lucide-react";
+import { Code, Database, Download, RotateCcw, LogOut } from "lucide-react";
 
 const MainContent: React.FC = () => {
   const {
@@ -34,15 +35,14 @@ const MainContent: React.FC = () => {
     resetDemoData,
   } = useApp();
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showDownloadZip, setShowDownloadZip] = useState(false);
   const [showDatabaseModal, setShowDatabaseModal] = useState(false);
   const [showPythonModal, setShowPythonModal] = useState(false);
-  const [requestTargetStudent, setRequestTargetStudent] =
-    useState<Student | null>(null);
-  const [messagingTargetStudent, setMessagingTargetStudent] =
-    useState<Student | null>(null);
+  const [requestTargetStudent, setRequestTargetStudent] = useState<Student | null>(null);
+  const [messagingTargetStudent, setMessagingTargetStudent] = useState<Student | null>(null);
 
   const handleOpenMessage = (student: Student) => {
     setMessagingTargetStudent(student);
@@ -53,9 +53,14 @@ const MainContent: React.FC = () => {
     setRequestTargetStudent(student);
   };
 
+  if (!isAuthenticated) {
+    return <LoginView onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen text-[#FAF7F2] flex flex-col font-sans selection:bg-[#00FFFF]/30 selection:text-white">
       <Header
+        onLogout={() => setIsAuthenticated(false)}
         onOpenDownloadZip={() => setShowDownloadZip(true)}
         onOpenCreateProject={() => setShowCreateProject(true)}
         onOpenDatabaseModal={() => setShowDatabaseModal(true)}
@@ -227,6 +232,13 @@ const MainContent: React.FC = () => {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset State</span>
+            </button>
+            <button
+              onClick={() => setIsAuthenticated(false)}
+              className="text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 font-medium ml-2"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>

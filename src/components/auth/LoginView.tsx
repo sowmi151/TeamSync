@@ -90,7 +90,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider ml-1">
-              University Email
+              Email{" "}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
