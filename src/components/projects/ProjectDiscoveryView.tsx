@@ -3,7 +3,6 @@ import { useApp } from "../../context/AppContext";
 import { Project } from "../../types";
 import { calculateProjectMatch } from "../../utils/matching/projectMatching";
 import { Plus, Search, Users } from "lucide-react";
-
 export const ProjectDiscoveryView: React.FC<{
   onOpenCreateProject: () => void;
   onSelectProject: (project: Project) => void;
