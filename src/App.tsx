@@ -42,8 +42,10 @@ const MainContent: React.FC = () => {
   const [showDownloadZip, setShowDownloadZip] = useState(false);
   const [showDatabaseModal, setShowDatabaseModal] = useState(false);
   const [showPythonModal, setShowPythonModal] = useState(false);
-  const [requestTargetStudent, setRequestTargetStudent] = useState<Student | null>(null);
-  const [messagingTargetStudent, setMessagingTargetStudent] = useState<Student | null>(null);
+  const [requestTargetStudent, setRequestTargetStudent] =
+    useState<Student | null>(null);
+  const [messagingTargetStudent, setMessagingTargetStudent] =
+    useState<Student | null>(null);
 
   const handleOpenMessage = (student: Student) => {
     setMessagingTargetStudent(student);
@@ -57,24 +59,24 @@ const MainContent: React.FC = () => {
   // --- THE MAGIC FIX IS HERE ---
   if (!isAuthenticated) {
     return (
-      <LoginView 
+      <LoginView
         onLogin={(newName, newEmail) => {
           setIsAuthenticated(true);
-          
+
           // 1. If no name was typed (Log In mode), generate one from the email prefix
           let finalName = newName;
           if (!finalName && newEmail && newEmail !== currentUser.email) {
-            finalName = newEmail.split('@')[0]; // e.g. "akshyalux2619"
+            finalName = newEmail.split("@")[0]; // e.g. "akshyalux2619"
           }
 
           if (finalName || newEmail) {
             updateCurrentUserProfile({
               name: finalName || currentUser.name,
               email: newEmail || currentUser.email,
-              avatarUrl: "" // 2. Clear Rahul's photo so your initials (AL) take over!
+              avatarUrl: "", // 2. Clear Rahul's photo so your initials (AL) take over!
             });
           }
-        }} 
+        }}
       />
     );
   }
@@ -217,51 +219,6 @@ const MainContent: React.FC = () => {
             </span>
             <span>•</span>
             <span>Collegiate Intelligent Team Matching System</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            <button
-              onClick={() => setActiveTab("test-suite")}
-              className="hover:text-[#FAF7F2] transition-colors flex items-center gap-1"
-            >
-              <Code className="w-3.5 h-3.5 text-[#C5A880]" />
-              <span>Section 64 Test Suite</span>
-            </button>
-            <button
-              onClick={() => setShowPythonModal(true)}
-              className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 font-medium"
-            >
-              <span>⚙️</span>
-              <span>Python app.py</span>
-            </button>
-            <button
-              onClick={() => setShowDatabaseModal(true)}
-              className="text-[#FAF7F2] hover:text-[#E5C07B] transition-colors flex items-center gap-1 font-medium"
-            >
-              <Database className="w-3.5 h-3.5 text-[#E5C07B]" />
-              <span>Collegiate Database (52)</span>
-            </button>
-            <button
-              onClick={() => setShowDownloadZip(true)}
-              className="text-[#E5C07B] font-medium hover:underline flex items-center gap-1"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download Project .ZIP</span>
-            </button>
-            <button
-              onClick={resetDemoData}
-              className="hover:text-rose-400 transition-colors flex items-center gap-1"
-              title="Reset state back to initial seed records"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset State</span>
-            </button>
-            <button
-              onClick={() => setIsAuthenticated(false)}
-              className="text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 font-medium ml-2"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4 pt-4 border-t border-white/[0.04] flex flex-col md:flex-row items-center justify-between gap-2 text-[11px] text-[#71717A]">
