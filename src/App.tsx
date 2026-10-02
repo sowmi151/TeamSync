@@ -221,13 +221,6 @@ const MainContent: React.FC = () => {
             <span>Collegiate Intelligent Team Matching System</span>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4 pt-4 border-t border-white/[0.04] flex flex-col md:flex-row items-center justify-between gap-2 text-[11px] text-[#71717A]">
-          <div>
-            Collegiate Functional Platform • Deterministic Multi-Factor
-            Algorithmic Matching
-          </div>
-          <div>Designed with Galaxy Glassmorphism UI</div>
-        </div>
       </footer>
 
       {selectedStudentForModal && (
