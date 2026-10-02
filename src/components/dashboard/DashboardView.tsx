@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Briefcase,
+  Camera,
   CheckCircle2,
   Compass,
   Plus,
@@ -19,6 +20,7 @@ interface DashboardViewProps {
   onSendMessage: (student: Student) => void;
   onRequestTeam: (student: Student) => void;
   onOpenCreateProject: () => void;
+  onOpenEditProfile?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -26,6 +28,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSendMessage,
   onRequestTeam,
   onOpenCreateProject,
+  onOpenEditProfile,
 }) => {
   const {
     currentUser,
@@ -35,6 +38,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setActiveTab,
     setFilterSkillQuery,
   } = useApp();
+
+  const handleEditAvatarClick = () => {
+    if (onOpenEditProfile) {
+      onOpenEditProfile();
+    } else {
+      onOpenProfile(currentUser);
+    }
+  };
 
   const matches = useMemo(() => {
     return students
@@ -67,11 +78,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Welcome Banner */}
       <div className="p-6 rounded-2xl bg-[#111116] border border-white/8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg">
         <div className="flex items-center gap-4">
-          <Avatar
-            name={currentUser.name}
-            avatarUrl={currentUser.avatarUrl}
-            size="lg"
-          />
+          {/* Clickable Profile Picture with Hover Edit Overlay */}
+          <button
+            type="button"
+            onClick={handleEditAvatarClick}
+            className="group relative cursor-pointer rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+            title="Update Profile Picture"
+          >
+            <Avatar
+              name={currentUser.name}
+              avatarUrl={currentUser.avatarUrl}
+              size="lg"
+            />
+            <div className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[#E5C07B] backdrop-blur-[1px]">
+              <Camera className="w-4 h-4" />
+              <span className="text-[9px] font-mono mt-0.5">Edit</span>
+            </div>
+          </button>
+
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-serif-title font-bold text-2xl sm:text-3xl text-[#FAF7F2]">

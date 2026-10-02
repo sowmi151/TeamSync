@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useApp } from "../../context/AppContext";
 import { ExperienceLevel, StudentSkill } from "../../types";
-import { Plus, Trash2, X, Sparkles } from "lucide-react";
+import { Plus, Trash2, X, Sparkles, Camera, Upload, RotateCcw } from "lucide-react";
 
 export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({
   onClose,
 }) => {
   const { currentUser, updateCurrentUserProfile } = useApp();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>((currentUser as any).avatarUrl || "");
 
   const [name, setName] = useState(currentUser.name);
   const [department, setDepartment] = useState(currentUser.department);
@@ -38,6 +41,24 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({
   const [newSkillProf, setNewSkillProf] = useState(80);
   const [newSkillCat, setNewSkillCat] =
     useState<StudentSkill["category"]>("Backend");
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
@@ -115,9 +136,12 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({
       roles,
       interests,
       skills,
-    });
+      avatarUrl,
+    } as any);
     onClose();
   };
+
+  const initials = (name || "SO").slice(0, 2).toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -144,6 +168,59 @@ export const ProfileEditModal: React.FC<{ onClose: () => void }> = ({
         </div>
 
         <form onSubmit={handleSave} className="space-y-6">
+          {/* Avatar / Profile Picture Section */}
+          <div className="p-4 rounded-xl bg-[#0C0C10] border border-white/8 flex flex-col sm:flex-row items-center gap-5">
+            <div className="relative h-20 w-20 shrink-0 rounded-2xl overflow-hidden border border-[#D4AF37]/30 bg-[#16161F] flex items-center justify-center shadow-lg">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold font-mono tracking-wider text-[#38bdf8]">
+                  {initials}
+                </span>
+              )}
+            </div>
+
+            <div className="flex-1 text-center sm:text-left">
+              <label className="block text-[10px] font-bold text-[#E5C07B] uppercase tracking-widest font-mono mb-1">
+                Scholar Avatar / Identity Image
+              </label>
+              <p className="text-xs text-[#71717A] mb-3">
+                Upload a personal picture or badge to replace the initials indicator across the cohort.
+              </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#262633] text-xs font-medium text-[#FAF7F2] border border-white/8 flex items-center gap-1.5 transition"
+                >
+                  <Upload className="w-3.5 h-3.5 text-[#E5C07B]" />
+                  <span>Upload Image</span>
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-rose-950/40 text-xs font-medium text-[#A1A1AA] hover:text-rose-400 border border-white/8 flex items-center gap-1.5 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset to Initials</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">

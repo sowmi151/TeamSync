@@ -20,8 +20,8 @@ export interface Student {
   name: string;
   email: string;
   department: string;
-  year: string; // e.g. '3rd Year'
-  avatarUrl?: string;
+  year: string; // e.g. '2nd Year', '3rd Year'
+  avatarUrl?: string; // Base64 data URI or public asset URL
   bio: string;
   skills: StudentSkill[];
   interests: string[];
@@ -36,6 +36,22 @@ export interface Student {
   linkedinUrl?: string;
   portfolioUrl?: string;
   verified?: boolean;
+}
+
+/**
+ * Payload interface for calibrating/updating user profiles
+ */
+export interface UpdateProfilePayload {
+  name: string;
+  department: string;
+  year: string;
+  bio: string;
+  experience: ExperienceLevel | null;
+  availability: StudentAvailability | null;
+  roles: string[];
+  interests: string[];
+  skills: StudentSkill[];
+  avatarUrl?: string;
 }
 
 export interface ProjectSkillRequirement {
