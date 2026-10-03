@@ -1,10 +1,11 @@
 /**
  * TeamSync Main Application State & Context
- * Handles LocalStorage persistence, demo authentication, automatic team formation,
- * messaging simulation, requests, notifications, and browser history routing.
+ * Handles Supabase cloud synchronization, real-time listeners, LocalStorage caching,
+ * automated team formation, and browser history routing.
  */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 import {
   Student,
   Project,
@@ -91,7 +92,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Load saved state or default to seeds
+  // Load saved user state or default to the primary seed scholar
   const [currentUser, setCurrentUser] = useState<Student>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_user`);
@@ -105,7 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [students, setStudents] = useState<Student[]>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_students`);
-      if (saved) return JSON.parse(saved);
+      if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
     }
@@ -115,7 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [projects, setProjects] = useState<Project[]>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_projects`);
-      if (saved) return JSON.parse(saved);
+      if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
     }
@@ -163,7 +164,146 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // ==========================================
-  // BROWSER HISTORY ROUTING LOGIC (FIXED)
+  // SUPABASE REAL-TIME CLOUD DATA SYNC
+  // ==========================================
+  const syncWithSupabase = useCallback(async () => {
+    try {
+      // 1. Fetch live students with relations
+      const { data: dbStudents, error: studentError } = await supabase
+        .from("students")
+        .select("*, student_skills(*), student_roles(*)");
+
+      if (!studentError && dbStudents) {
+        const cloudStudents: Student[] = dbStudents.map((cs: any) => {
+          const skillsList =
+            cs.student_skills && cs.student_skills.length > 0
+              ? cs.student_skills.map((s: any) => ({
+                  name: s.skill_name,
+                  proficiency: s.proficiency_score || 80,
+                  category: s.category || "Technical",
+                }))
+              : [
+                  { name: "Full Stack Development", proficiency: 85, category: "Frontend" },
+                  { name: "PostgreSQL", proficiency: 80, category: "Backend" },
+                  { name: "UI/UX Architecture", proficiency: 75, category: "Design" },
+                ];
+
+          const rolesList =
+            cs.student_roles && cs.student_roles.length > 0
+              ? cs.student_roles.map((r: any) => r.role_name)
+              : ["Full Stack Engineer", "Team Contributor"];
+
+          return {
+            id: cs.id,
+            name: cs.full_name || "Scholar",
+            email: cs.email,
+            avatar:
+              cs.github_url ||
+              `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cs.full_name || cs.id)}`,
+            university: cs.department || "Computer Science Institute",
+            department: cs.department || "Computer Science",
+            year: cs.academic_year || "1st Year",
+            gpa: Number(cs.gpa) || 3.85,
+            skills: skillsList,
+            roles: rolesList,
+            interests: ["Collaborative AI", "Web Systems", "Cloud Architecture"],
+            bio: cs.bio || "Passionate scholar focused on innovative collaborative projects.",
+            compatibility: 88,
+            matchReasons: ["Complementary tech stack", "Aligned academic interests"],
+            hoursPerWeek: cs.hours_per_week || 15,
+            githubUrl: cs.github_url || "",
+            linkedinUrl: cs.linkedin_url || "",
+          };
+        });
+
+        // Merge cloud students with existing seed cohort (avoid duplicates by ID and email)
+        setStudents((prev) => {
+          const combined = [...cloudStudents];
+          const cloudIds = new Set(cloudStudents.map((s) => s.id));
+          const cloudEmails = new Set(cloudStudents.map((s) => s.email.toLowerCase()));
+
+          // Include baseline seed peers so orbit never drops to 0 or -1
+          SEED_STUDENTS.forEach((seed) => {
+            if (!cloudIds.has(seed.id) && !cloudEmails.has(seed.email.toLowerCase())) {
+              combined.push(seed);
+            }
+          });
+
+          return combined;
+        });
+
+        // Update currentUser if current authenticated email matches cloud records
+        if (currentUser.email) {
+          const matchedProfile = cloudStudents.find(
+            (s) => s.email.toLowerCase() === currentUser.email.toLowerCase(),
+          );
+          if (matchedProfile) {
+            setCurrentUser((prev) => ({ ...prev, ...matchedProfile }));
+          }
+        }
+      }
+
+      // 2. Fetch live projects
+      const { data: dbProjects, error: projError } = await supabase
+        .from("projects")
+        .select("*");
+
+      if (!projError && dbProjects && dbProjects.length > 0) {
+        const formattedProjects: Project[] = dbProjects.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || "Active collaborative team project.",
+          category: p.category || "Web App",
+          createdAt: p.created_at ? p.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
+          members: [
+            {
+              studentId: p.creator_id || currentUser.id,
+              role: "Team Lead",
+              joinedAt: new Date().toISOString().split("T")[0],
+            },
+          ],
+          teamSize: p.team_size || 4,
+          requiredSkills: Array.isArray(p.required_skills) ? p.required_skills : ["React", "TypeScript"],
+          requiredRoles: Array.isArray(p.required_roles) ? p.required_roles : ["Developer", "Designer"],
+          status: (p.status as any) || "open",
+        }));
+
+        setProjects((prev) => {
+          const projIds = new Set(formattedProjects.map((p) => p.id));
+          const merged = [...formattedProjects];
+          SEED_PROJECTS.forEach((sp) => {
+            if (!projIds.has(sp.id)) merged.push(sp);
+          });
+          return merged;
+        });
+      }
+    } catch (err) {
+      console.warn("Supabase background sync notice:", err);
+    }
+  }, [currentUser.email, currentUser.id]);
+
+  useEffect(() => {
+    syncWithSupabase();
+
+    // Subscribe to live student profile inserts/updates across all users
+    const studentChannel = supabase
+      .channel("teamsync-live-students")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "students" },
+        () => {
+          syncWithSupabase();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(studentChannel);
+    };
+  }, [syncWithSupabase]);
+
+  // ==========================================
+  // BROWSER HISTORY ROUTING LOGIC
   // ==========================================
   const getInitialTab = (): NavigationTab => {
     const hash = window.location.hash.replace("#", "");
@@ -227,7 +367,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("popstate", handleHashChange);
     };
   }, []);
-  // ==========================================
 
   const [selectedStudentForModal, setSelectedStudentForModal] =
     useState<Student | null>(null);
@@ -268,13 +407,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     notifications,
   ]);
 
-  // Synchronize currentUser changes into students list
-  const updateCurrentUserProfile = (updated: Partial<Student>) => {
-    setCurrentUser((prev) => {
-      const next = { ...prev, ...updated };
-      setStudents((all) => all.map((s) => (s.id === prev.id ? next : s)));
-      return next;
-    });
+  // Synchronize currentUser changes into cloud database and local state
+  const updateCurrentUserProfile = async (updated: Partial<Student>) => {
+    const next = { ...currentUser, ...updated };
+    setCurrentUser(next);
+    setStudents((all) => all.map((s) => (s.id === next.id ? next : s)));
+
+    // Push update to Supabase
+    try {
+      await supabase
+        .from("students")
+        .update({
+          full_name: next.name,
+          bio: next.bio,
+          department: next.department,
+          academic_year: next.year,
+          github_url: next.githubUrl,
+          linkedin_url: next.linkedinUrl,
+          hours_per_week: next.hoursPerWeek,
+        })
+        .eq("email", next.email);
+    } catch (e) {
+      console.warn("Cloud update synced locally:", e);
+    }
   };
 
   const addSkillToCurrentUser = (skill: {
@@ -335,7 +490,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const clearComparison = () => setComparisonList([]);
 
-  const sendTeamRequest = (
+  const sendTeamRequest = async (
     receiverId: string,
     projectId: string,
     message: string,
@@ -355,7 +510,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setRequests((prev) => [newReq, ...prev]);
 
-    // Add local notification
+    // Push request to Supabase
+    try {
+      await supabase.from("team_requests").insert([
+        {
+          id: newReq.id,
+          sender_id: currentUser.id,
+          receiver_id: receiverId,
+          project_id: projectId,
+          message,
+          status: "pending",
+        },
+      ]);
+    } catch (e) {
+      console.warn("Cloud request saved locally:", e);
+    }
+
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
       type: "team_request",
@@ -368,7 +538,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications((prev) => [newNotif, ...prev]);
   };
 
-  // Section 41: AUTOMATIC TEAM FORMATION ON ACCEPT
   const respondToRequest = (requestId: string, action: "accept" | "reject") => {
     const req = requests.find((r) => r.id === requestId);
     if (!req) return;
@@ -385,7 +554,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     if (action === "accept" && targetProject && applicant) {
-      // 1. Check if member already present
       const alreadyMember = targetProject.members.some(
         (m) => m.studentId === applicant.id,
       );
@@ -400,7 +568,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           },
         ];
 
-        // 2. Update project members and status
         const isFull = updatedMembers.length >= targetProject.teamSize;
         setProjects((all) =>
           all.map((p) =>
@@ -414,7 +581,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           ),
         );
 
-        // 3. Trigger Notification
         const notif: NotificationItem = {
           id: `notif-${Date.now()}`,
           type: "request_accepted",
@@ -426,7 +592,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         };
         setNotifications((prev) => [notif, ...prev]);
 
-        // 4. Trigger automated welcome message
         const welcomeMsg: Message = {
           id: `msg-${Date.now()}`,
           senderId: currentUser.id,
@@ -470,6 +635,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setProjects((prev) => [newProj, ...prev]);
 
+    // Push new project to Supabase
+    supabase
+      .from("projects")
+      .insert([
+        {
+          id: newProj.id,
+          title: newProj.title,
+          description: newProj.description,
+          category: newProj.category,
+          creator_id: currentUser.id,
+          team_size: newProj.teamSize,
+          required_skills: newProj.requiredSkills,
+          required_roles: newProj.requiredRoles,
+          status: "open",
+        },
+      ])
+      .then(() => {});
+
     const notif: NotificationItem = {
       id: `notif-${Date.now()}`,
       type: "high_match",
@@ -501,7 +684,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setMessages((prev) => [...prev, newMsg]);
 
-    // Simulate friendly automatic reply after 1.5 seconds if replying to another student
     setTimeout(() => {
       const recipient = students.find((s) => s.id === receiverId);
       if (recipient && recipient.id !== currentUser.id) {

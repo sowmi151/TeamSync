@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { supabase } from "../../lib/supabase";
 import {
   Mail,
   Lock,
@@ -6,6 +7,7 @@ import {
   User,
   UserPlus,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 interface LoginViewProps {
@@ -18,29 +20,99 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isHovering, setIsHovering] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<
     "form" | "google" | "github" | null
   >(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingProvider("form");
-    setTimeout(() => {
-      onLogin(isLoginMode ? undefined : name, email);
+    setErrorMsg(null);
+
+    try {
+      if (isLoginMode) {
+        // Authenticate existing user
+        const { data: authData, error: authError } =
+          await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+
+        if (authError) throw authError;
+
+        // Fetch corresponding profile from the students table
+        const { data: student } = await supabase
+          .from("students")
+          .select("full_name, email")
+          .eq("email", email.trim())
+          .maybeSingle();
+
+        const displayName =
+          student?.full_name ||
+          authData.user?.user_metadata?.full_name ||
+          email.split("@")[0];
+
+        onLogin(displayName, email.trim());
+      } else {
+        // Sign up new user
+        const { data: authData, error: authError } =
+          await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: {
+              data: {
+                full_name: name.trim(),
+              },
+            },
+          });
+
+        if (authError) throw authError;
+
+        const studentId = authData.user?.id || `student-${Date.now()}`;
+        const displayName = name.trim() || email.split("@")[0];
+
+        // Insert new student profile into public.students
+        const { error: insertError } = await supabase.from("students").insert([
+          {
+            id: studentId,
+            full_name: displayName,
+            email: email.trim(),
+            department: "Computer Science",
+            academic_year: "1st Year",
+            degree: "B.Tech",
+            verified_student: true,
+          },
+        ]);
+
+        if (insertError) {
+          console.warn("Profile insert warning:", insertError.message);
+        }
+
+        onLogin(displayName, email.trim());
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Authentication failed. Please verify credentials.");
+    } finally {
       setLoadingProvider(null);
-    }, 500);
+    }
   };
 
-  const handleOAuthSignIn = (provider: "google" | "github") => {
+  const handleOAuthSignIn = async (provider: "google" | "github") => {
     setLoadingProvider(provider);
-    setTimeout(() => {
-      if (provider === "google") {
-        onLogin("Google Scholar", "scholar@gmail.com");
-      } else {
-        onLogin("GitHub Developer", "developer@github.com");
-      }
+    setErrorMsg(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setErrorMsg(err.message || `Unable to authenticate with ${provider}.`);
       setLoadingProvider(null);
-    }, 500);
+    }
   };
 
   return (
@@ -66,7 +138,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         {/* Animated Glass Glare */}
         <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
 
-        {/* Header with Your Custom Logo */}
+        {/* Header with Custom Logo */}
         <div className="text-center mb-8 relative z-10">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[rgba(5,8,25,0.7)] border border-[#38BDF8]/40 shadow-[0_0_25px_rgba(56,189,248,0.35)] mb-4 overflow-hidden p-2">
             <img
@@ -91,6 +163,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               : "Join the scholar network"}
           </p>
         </div>
+
+        {/* Dynamic Error Banner */}
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs animate-in fade-in duration-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
@@ -186,7 +266,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             )}
             <span>
               {loadingProvider === "form"
-                ? "Connecting..."
+                ? "Connecting to Cloud..."
                 : isLoginMode
                   ? "Initiate Session"
                   : "Create Scholar Profile"}
@@ -234,7 +314,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             )}
             <span className="text-sm font-semibold tracking-wide">
               {loadingProvider === "google"
-                ? "Signing in..."
+                ? "Connecting to Google..."
                 : "Sign in with Google"}
             </span>
           </button>
@@ -261,17 +341,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             )}
             <span className="text-sm font-semibold tracking-wide">
               {loadingProvider === "github"
-                ? "Signing in..."
+                ? "Connecting to Github..."
                 : "Sign in with Github"}
             </span>
           </button>
         </div>
 
-        {/* Toggle Button */}
+        {/* Toggle Mode */}
         <div className="mt-6 text-center relative z-10">
           <button
             type="button"
-            onClick={() => setIsLoginMode(!isLoginMode)}
+            onClick={() => {
+              setIsLoginMode(!isLoginMode);
+              setErrorMsg(null);
+            }}
             className="text-xs text-[#CBD5E1] hover:text-white transition-colors cursor-pointer"
           >
             {isLoginMode

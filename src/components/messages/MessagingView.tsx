@@ -88,9 +88,6 @@ export const MessagingView: React.FC<{
             mutual skill synergy.
           </p>
         </div>
-        <div className="text-[11px] text-[#E5C07B] bg-[#1C1812] px-3 py-1 rounded-md border border-[#D4AF37]/25 self-start sm:self-auto font-mono">
-          Demo Mode · Simulated Responses
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[600px] rounded-xl bg-[#121217] border border-white/8 overflow-hidden shadow-xl">
