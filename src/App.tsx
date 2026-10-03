@@ -216,53 +216,71 @@ const MainContent: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-6">
               👥 TeamSync — Meet the Creators
             </h2>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  name: "Member Name 1",
-                  role: "UI/UX Designer",
-                },
-                {
-                  name: "Member Name 2",
-                  role: "Frontend Developer",
-                },
-                {
-                  name: "Member Name 3",
-                  role: "Backend Developer",
-                },
-              ].map((member) => (
-                <div
-                  key={member.name}
-                  className="rounded-xl border border-white/10 bg-white/5 p-5"
-                >
-                  <h3 className="text-lg font-semibold text-white">
-                    {member.name}
-                  </h3>
-
-                  <p className="text-sm text-cyan-400 mt-1">{member.role}</p>
-
-                  <div className="mt-4 flex flex-col gap-2 text-sm text-[#A1A1AA]">
-                    <a href="#" className="hover:text-white">
-                      🔗 LinkedIn
-                    </a>
-
-                    <a href="#" className="hover:text-white">
-                      💻 GitHub
-                    </a>
-
-                    <a
-                      href="mailto:example@email.com"
-                      className="hover:text-white"
-                    >
-                      ✉️ Email
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Sowmiya",
+                role: "UI/UX Designer",
+                linkedin: "https://www.linkedin.com/in/sowmiya-a-work/",
+                github: "https://github.com/sowmi151",
+                email: "sowmi2378ak@gmail.com",
+              },
+              {
+                name: "Yogasree",
+                role: "Frontend Developer",
+                linkedin:
+                  "https://www.linkedin.com/in/yogasree-kumaran-633708440/",
+                github: "https://github.com/proton2006",
+                email: "yogasreegk@gmail.com",
+              },
+              {
+                name: "Mokshitha",
+                role: "Backend Developer",
+                linkedin: "https://www.linkedin.com/in/mokshitha-k-m-0786a9337",
+                github: "https://github.com/mokshakm3",
+                email: "mokshakm3@gmail.com",
+              },
+            ].map((member) => (
+              <div
+                key={member.name}
+                className="rounded-xl border border-white/10 bg-white/5 p-5"
+              >
+                <h3 className="text-lg font-semibold text-white">
+                  {member.name}
+                </h3>
 
+                <p className="text-sm text-cyan-400 mt-1">{member.role}</p>
+
+                <div className="mt-4 flex flex-col gap-2 text-sm text-[#A1A1AA]">
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white"
+                  >
+                    🔗 LinkedIn
+                  </a>
+
+                  <a
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white"
+                  >
+                    💻 GitHub
+                  </a>
+
+                  <a
+                    href={`mailto:${member.email}`}
+                    className="hover:text-white"
+                  >
+                    ✉️ Email
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">
               💬 Feedback & Queries
