@@ -72,11 +72,11 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab("dashboard")}
             className="flex items-center gap-2.5 group text-left"
           >
-            <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-[#1E1A14] to-[#2E271B] flex items-center justify-center border border-[#D4AF37]/35 shadow-sm group-hover:border-[#D4AF37]/60 transition-colors">
-              <span className="font-serif-title font-bold text-sm text-[#E5C07B]">
-                TS
-              </span>
-            </div>
+        <img
+  src="/logo.png.jpeg"
+  alt="TeamSync Logo"
+  className="w-9 h-9 object-contain rounded-xl"
+/>
             <span className="font-serif-title text-2xl font-bold tracking-tight text-[#FAF7F2] group-hover:text-[#E8D390] transition-colors">
               TeamSync
             </span>

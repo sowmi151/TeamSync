@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Mail, Lock, LogIn, User, UserPlus, Loader2 } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  LogIn,
+  User,
+  UserPlus,
+  Loader2,
+} from "lucide-react";
 
 interface LoginViewProps {
   onLogin: (name?: string, email?: string) => void;
@@ -11,7 +18,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isHovering, setIsHovering] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState<"form" | "google" | "github" | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<
+    "form" | "google" | "github" | null
+  >(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +34,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const handleOAuthSignIn = (provider: "google" | "github") => {
     setLoadingProvider(provider);
     setTimeout(() => {
-      // Passes authenticated user back to App.tsx to complete login
       if (provider === "google") {
         onLogin("Google Scholar", "scholar@gmail.com");
       } else {
@@ -58,29 +66,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         {/* Animated Glass Glare */}
         <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
 
-        {/* Header with Custom Glowing Star Logo */}
+        {/* Header with Your Custom Logo */}
         <div className="text-center mb-8 relative z-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[rgba(5,8,25,0.7)] border border-[#38BDF8]/40 shadow-[0_0_20px_rgba(56,189,248,0.35)] mb-4">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-8 h-8 text-[#38BDF8] drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]"
-            >
-              <path
-                d="M12 3C12 7.8 16.2 12 21 12C16.2 12 12 16.2 12 21C12 16.2 7.8 12 3 12C7.8 12 12 7.8 12 3Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="7" cy="17" r="1.25" fill="currentColor" />
-              <path
-                d="M17.5 4.5V7.5M16 6H19"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[rgba(5,8,25,0.7)] border border-[#38BDF8]/40 shadow-[0_0_25px_rgba(56,189,248,0.35)] mb-4 overflow-hidden p-2">
+            <img
+              src="/logo.png.jpeg"
+              alt="TeamSync Logo"
+              className="w-full h-full object-contain rounded-xl drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+            />
           </div>
 
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
@@ -195,8 +188,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               {loadingProvider === "form"
                 ? "Connecting..."
                 : isLoginMode
-                ? "Initiate Session"
-                : "Create Scholar Profile"}
+                  ? "Initiate Session"
+                  : "Create Scholar Profile"}
             </span>
           </button>
         </form>
@@ -211,7 +204,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
         {/* OAuth Buttons */}
         <div className="flex flex-col gap-3 relative z-10">
-          {/* Sign in with Google */}
           <button
             type="button"
             disabled={loadingProvider !== null}
@@ -241,11 +233,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               </svg>
             )}
             <span className="text-sm font-semibold tracking-wide">
-              {loadingProvider === "google" ? "Signing in..." : "Sign in with Google"}
+              {loadingProvider === "google"
+                ? "Signing in..."
+                : "Sign in with Google"}
             </span>
           </button>
 
-          {/* Sign in with GitHub */}
           <button
             type="button"
             disabled={loadingProvider !== null}
@@ -255,7 +248,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             {loadingProvider === "github" ? (
               <Loader2 className="h-5 w-5 animate-spin text-white" />
             ) : (
-              <svg className="h-5 w-5 fill-current text-white" viewBox="0 0 24 24">
+              <svg
+                className="h-5 w-5 fill-current text-white"
+                viewBox="0 0 24 24"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -264,7 +260,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               </svg>
             )}
             <span className="text-sm font-semibold tracking-wide">
-              {loadingProvider === "github" ? "Signing in..." : "Sign in with Github"}
+              {loadingProvider === "github"
+                ? "Signing in..."
+                : "Sign in with Github"}
             </span>
           </button>
         </div>
