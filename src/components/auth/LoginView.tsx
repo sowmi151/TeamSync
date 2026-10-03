@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 interface LoginViewProps {
+  // We added name and email parameters here so we can pass them back to App.tsx
   onLogin: (name?: string, email?: string) => void;
 }
 
@@ -136,7 +137,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         onMouseLeave={() => setIsHovering(false)}
       >
         {/* Animated Glass Glare */}
-        <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
+        <div className="absolute top-0 left-[-150%] w-[50%] h-full bg-linear-to-r from-transparent via-[rgba(255,255,255,0.08)] to-transparent skew-x-[-25deg] animate-[glassShine_6s_infinite] pointer-events-none" />
 
         {/* Header with Custom Logo */}
         <div className="text-center mb-8 relative z-10">
@@ -147,7 +148,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               className="w-full h-full object-contain rounded-xl drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]"
             />
           </div>
-
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
             Team
             <span
@@ -173,7 +173,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          {/* Name Field - Only visible when Sign Up is active */}
           {!isLoginMode && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
               <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider ml-1">
@@ -197,7 +198,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider ml-1">
-              Email
+              Email{" "}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -235,8 +236,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
           <button
             type="submit"
-            disabled={loadingProvider !== null}
-            className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 rounded-xl text-white font-bold transition-all cursor-pointer disabled:opacity-70"
+            className="w-full flex items-center justify-center gap-2 py-3.5 mt-4 rounded-xl text-white font-bold transition-all"
             style={{
               background:
                 "linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(56, 189, 248, 0.8))",
@@ -257,9 +257,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 "0 5px 15px rgba(168, 85, 247, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3)";
             }}
           >
-            {loadingProvider === "form" ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : isLoginMode ? (
+            {isLoginMode ? (
               <LogIn className="w-4 h-4" />
             ) : (
               <UserPlus className="w-4 h-4" />
