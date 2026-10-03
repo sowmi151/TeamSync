@@ -210,19 +210,114 @@ const MainContent: React.FC = () => {
         )}
         {activeTab === "test-suite" && <AlgorithmTestSuite />}
       </main>
+      <section className="border-t border-white/10 py-10 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto space-y-10">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">
+              👥 TeamSync — Meet the Creators
+            </h2>
 
-      <footer className="mt-16 border-t border-white/8 bg-[#0A0A0D]/50 py-8 text-xs text-[#71717A]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-serif-title font-bold text-sm tracking-tight text-[#FAF7F2]">
-              TeamSync
-            </span>
-            <span>•</span>
-            <span>Collegiate Intelligent Team Matching System</span>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  name: "Member Name 1",
+                  role: "UI/UX Designer",
+                },
+                {
+                  name: "Member Name 2",
+                  role: "Frontend Developer",
+                },
+                {
+                  name: "Member Name 3",
+                  role: "Backend Developer",
+                },
+              ].map((member) => (
+                <div
+                  key={member.name}
+                  className="rounded-xl border border-white/10 bg-white/5 p-5"
+                >
+                  <h3 className="text-lg font-semibold text-white">
+                    {member.name}
+                  </h3>
+
+                  <p className="text-sm text-cyan-400 mt-1">{member.role}</p>
+
+                  <div className="mt-4 flex flex-col gap-2 text-sm text-[#A1A1AA]">
+                    <a href="#" className="hover:text-white">
+                      🔗 LinkedIn
+                    </a>
+
+                    <a href="#" className="hover:text-white">
+                      💻 GitHub
+                    </a>
+
+                    <a
+                      href="mailto:example@email.com"
+                      className="hover:text-white"
+                    >
+                      ✉️ Email
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </footer>
 
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">
+              💬 Feedback & Queries
+            </h2>
+
+            <div className="max-w-2xl rounded-xl border border-white/10 bg-white/5 p-6">
+              <p className="text-sm text-[#A1A1AA] mb-5">
+                Share your feedback or suggestions…
+              </p>
+
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Name (optional)"
+                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
+                />
+
+                <input
+                  type="email"
+                  placeholder="Email (optional)"
+                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
+                />
+
+                <textarea
+                  placeholder="Feedback / Query"
+                  rows={5}
+                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none resize-none"
+                />
+
+                <button className="px-5 py-3 rounded-lg bg-linear-to-r from-purple-500 to-cyan-500 text-white font-semibold">
+                  Submit Feedback
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <footer className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#71717A]">
+            <div>© 2026 TeamSync • Built with ❤️ by TeamSync</div>
+
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-white">
+                LinkedIn
+              </a>
+
+              <a href="#" className="hover:text-white">
+                GitHub
+              </a>
+
+              <a href="mailto:example@email.com" className="hover:text-white">
+                Email
+              </a>
+            </div>
+          </footer>
+        </div>
+      </section>
       {selectedStudentForModal && (
         <StudentProfileModal
           student={selectedStudentForModal}
