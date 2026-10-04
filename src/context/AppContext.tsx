@@ -4,7 +4,14 @@
  * automated team formation, and browser history routing.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { supabase } from "../lib/supabase";
 import {
   Student,
@@ -92,7 +99,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Load saved user state or default to the primary seed scholar
   const [currentUser, setCurrentUser] = useState<Student>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_user`);
@@ -102,6 +108,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     return SEED_STUDENTS[0];
   });
+
+  // Reference keeps current user ID fresh inside real-time event callbacks without tearing down channels
+  const currentUserRef = useRef<Student>(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   const [students, setStudents] = useState<Student[]>(() => {
     try {
@@ -194,7 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               : ["Full Stack Engineer", "Team Contributor"];
 
           return {
-            id: cs.id,
+            id: String(cs.id),
             name: cs.full_name || "Scholar",
             email: cs.email,
             avatar:
@@ -216,15 +228,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           };
         });
 
-        // Merge cloud students with existing seed cohort (avoid duplicates by ID and email)
         setStudents((prev) => {
           const combined = [...cloudStudents];
           const cloudIds = new Set(cloudStudents.map((s) => s.id));
-          const cloudEmails = new Set(cloudStudents.map((s) => s.email.toLowerCase()));
+          const cloudEmails = new Set(
+            cloudStudents.map((s) => (s.email || "").toLowerCase()),
+          );
 
-          // Include baseline seed peers so orbit never drops to 0 or -1
           SEED_STUDENTS.forEach((seed) => {
-            if (!cloudIds.has(seed.id) && !cloudEmails.has(seed.email.toLowerCase())) {
+            if (!cloudIds.has(seed.id) && !cloudEmails.has((seed.email || "").toLowerCase())) {
               combined.push(seed);
             }
           });
@@ -232,10 +244,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           return combined;
         });
 
-        // Update currentUser if current authenticated email matches cloud records
-        if (currentUser.email) {
+        const activeEmail = currentUserRef.current.email;
+        if (activeEmail) {
           const matchedProfile = cloudStudents.find(
-            (s) => s.email.toLowerCase() === currentUser.email.toLowerCase(),
+            (s) => s.email?.toLowerCase() === activeEmail.toLowerCase(),
           );
           if (matchedProfile) {
             setCurrentUser((prev) => ({ ...prev, ...matchedProfile }));
@@ -250,14 +262,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!projError && dbProjects && dbProjects.length > 0) {
         const formattedProjects: Project[] = dbProjects.map((p: any) => ({
-          id: p.id,
+          id: String(p.id),
           title: p.title,
           description: p.description || "Active collaborative team project.",
           category: p.category || "Web App",
           createdAt: p.created_at ? p.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
           members: [
             {
-              studentId: p.creator_id || currentUser.id,
+              studentId: String(p.creator_id || currentUserRef.current.id),
               role: "Team Lead",
               joinedAt: new Date().toISOString().split("T")[0],
             },
@@ -277,28 +289,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           return merged;
         });
       }
+
+      // 3. Fetch live team requests
+      const { data: dbRequests, error: reqError } = await supabase
+        .from("team_requests")
+        .select("*");
+
+      if (!reqError && dbRequests) {
+        const formattedRequests: TeamRequest[] = dbRequests.map((r: any) => ({
+          id: String(r.id),
+          senderId: String(r.sender_id),
+          receiverId: String(r.receiver_id),
+          projectId: String(r.project_id),
+          message: r.message || "",
+          status: r.status || "pending",
+          createdAt: r.created_at || new Date().toISOString(),
+        }));
+
+        setRequests((prev) => {
+          const reqIds = new Set(formattedRequests.map((r) => r.id));
+          const merged = [...formattedRequests];
+          prev.forEach((pr) => {
+            if (!reqIds.has(pr.id)) merged.push(pr);
+          });
+          return merged;
+        });
+      }
     } catch (err) {
       console.warn("Supabase background sync notice:", err);
     }
-  }, [currentUser.email, currentUser.id]);
+  }, []);
 
+  // Initial Sync on load
   useEffect(() => {
     syncWithSupabase();
+  }, [syncWithSupabase]);
 
-    // Subscribe to live student profile inserts/updates across all users
-    const studentChannel = supabase
-      .channel("teamsync-live-students")
+  // Persistent Realtime Listener
+  useEffect(() => {
+    const channel = supabase
+      .channel("teamsync-global-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "team_requests" },
+        (payload: any) => {
+          if (payload.eventType === "INSERT") {
+            const raw = payload.new;
+            const incoming: TeamRequest = {
+              id: String(raw.id),
+              senderId: String(raw.sender_id),
+              receiverId: String(raw.receiver_id),
+              projectId: String(raw.project_id),
+              message: raw.message || "",
+              status: raw.status || "pending",
+              createdAt: raw.created_at || new Date().toISOString(),
+            };
+
+            setRequests((prev) => {
+              if (prev.some((r) => r.id === incoming.id)) return prev;
+              return [incoming, ...prev];
+            });
+
+            // Compare against latest active user ID
+            const activeId = String(currentUserRef.current.id);
+            if (incoming.receiverId === activeId) {
+              const newNotif: NotificationItem = {
+                id: `notif-rec-${Date.now()}`,
+                type: "team_request",
+                title: "New Team Invitation",
+                description: `You have received an invitation to join a squad.`,
+                timestamp: new Date().toISOString(),
+                isRead: false,
+                linkTab: "requests",
+              };
+              setNotifications((prev) => [newNotif, ...prev]);
+            }
+          } else if (payload.eventType === "UPDATE") {
+            setRequests((prev) =>
+              prev.map((r) =>
+                r.id === String(payload.new.id)
+                  ? { ...r, status: payload.new.status }
+                  : r,
+              ),
+            );
+          } else if (payload.eventType === "DELETE") {
+            setRequests((prev) =>
+              prev.filter((r) => r.id !== String(payload.old.id)),
+            );
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects" },
+        () => syncWithSupabase(),
+      )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "students" },
-        () => {
-          syncWithSupabase();
-        },
+        () => syncWithSupabase(),
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("[TeamSync] Realtime WebSocket connected successfully.");
+        }
+      });
 
     return () => {
-      supabase.removeChannel(studentChannel);
+      supabase.removeChannel(channel);
     };
   }, [syncWithSupabase]);
 
@@ -320,10 +418,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       "profile",
       "test-suite",
     ];
-    if (validTabs.includes(hash as NavigationTab)) {
-      return hash as NavigationTab;
-    }
-    return "dashboard";
+    return validTabs.includes(hash as NavigationTab)
+      ? (hash as NavigationTab)
+      : "dashboard";
   };
 
   const [activeTab, setActiveTabState] = useState<NavigationTab>(getInitialTab);
@@ -351,12 +448,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         "profile",
         "test-suite",
       ];
-
-      if (validTabs.includes(hash as NavigationTab)) {
-        setActiveTabState(hash as NavigationTab);
-      } else {
-        setActiveTabState("dashboard");
-      }
+      setActiveTabState(
+        validTabs.includes(hash as NavigationTab)
+          ? (hash as NavigationTab)
+          : "dashboard",
+      );
     };
 
     window.addEventListener("hashchange", handleHashChange);
@@ -378,7 +474,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
   const [filterSkillQuery, setFilterSkillQuery] = useState<string>("");
 
-  // Persist state changes to LocalStorage
   useEffect(() => {
     try {
       localStorage.setItem(`${STORAGE_KEY}_user`, JSON.stringify(currentUser));
@@ -407,13 +502,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     notifications,
   ]);
 
-  // Synchronize currentUser changes into cloud database and local state
   const updateCurrentUserProfile = async (updated: Partial<Student>) => {
     const next = { ...currentUser, ...updated };
     setCurrentUser(next);
     setStudents((all) => all.map((s) => (s.id === next.id ? next : s)));
 
-    // Push update to Supabase
     try {
       await supabase
         .from("students")
@@ -440,14 +533,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const existing = (currentUser.skills || []).find(
       (s) => s.name.toLowerCase() === skill.name.toLowerCase(),
     );
-    let nextSkills;
-    if (existing) {
-      nextSkills = currentUser.skills.map((s) =>
-        s.name.toLowerCase() === skill.name.toLowerCase() ? skill : s,
-      );
-    } else {
-      nextSkills = [...(currentUser.skills || []), skill];
-    }
+    const nextSkills = existing
+      ? currentUser.skills.map((s) =>
+          s.name.toLowerCase() === skill.name.toLowerCase() ? skill : s,
+        )
+      : [...(currentUser.skills || []), skill];
+
     updateCurrentUserProfile({ skills: nextSkills });
   };
 
@@ -495,30 +586,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     projectId: string,
     message: string,
   ) => {
-    const targetProject = projects.find((p) => p.id === projectId);
-    const receiver = students.find((s) => s.id === receiverId);
+    const targetProject = projects.find((p) => String(p.id) === String(projectId));
+    const receiver = students.find((s) => String(s.id) === String(receiverId));
 
     const newReq: TeamRequest = {
       id: `req-${Date.now()}`,
-      senderId: currentUser.id,
-      receiverId,
-      projectId,
+      senderId: String(currentUser.id),
+      receiverId: String(receiverId),
+      projectId: String(projectId),
       message,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
 
+    // Instant local optimistic update
     setRequests((prev) => [newReq, ...prev]);
 
-    // Push request to Supabase
     try {
       await supabase.from("team_requests").insert([
         {
           id: newReq.id,
-          sender_id: currentUser.id,
-          receiver_id: receiverId,
-          project_id: projectId,
-          message,
+          sender_id: newReq.senderId,
+          receiver_id: newReq.receiverId,
+          project_id: newReq.projectId,
+          message: newReq.message,
           status: "pending",
         },
       ]);
@@ -538,24 +629,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications((prev) => [newNotif, ...prev]);
   };
 
-  const respondToRequest = (requestId: string, action: "accept" | "reject") => {
-    const req = requests.find((r) => r.id === requestId);
+  const respondToRequest = async (requestId: string, action: "accept" | "reject") => {
+    const req = requests.find((r) => String(r.id) === String(requestId));
     if (!req) return;
 
     const applicant =
-      students.find((s) => s.id === req.senderId) ||
-      students.find((s) => s.id === req.receiverId);
-    const targetProject = projects.find((p) => p.id === req.projectId);
+      students.find((s) => String(s.id) === String(req.senderId)) ||
+      students.find((s) => String(s.id) === String(req.receiverId));
+    const targetProject = projects.find((p) => String(p.id) === String(req.projectId));
 
     const newStatus: "accepted" | "rejected" =
       action === "accept" ? "accepted" : "rejected";
+
     setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r)),
+      prev.map((r) => (String(r.id) === String(requestId) ? { ...r, status: newStatus } : r)),
     );
+
+    try {
+      await supabase
+        .from("team_requests")
+        .update({ status: newStatus })
+        .eq("id", requestId);
+    } catch (e) {
+      console.warn("Could not update request in cloud:", e);
+    }
 
     if (action === "accept" && targetProject && applicant) {
       const alreadyMember = targetProject.members.some(
-        (m) => m.studentId === applicant.id,
+        (m) => String(m.studentId) === String(applicant.id),
       );
       if (!alreadyMember) {
         const applicantRole = applicant.roles?.[0] || "Team Contributor";
@@ -571,7 +672,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const isFull = updatedMembers.length >= targetProject.teamSize;
         setProjects((all) =>
           all.map((p) =>
-            p.id === targetProject.id
+            String(p.id) === String(targetProject.id)
               ? {
                   ...p,
                   members: updatedMembers,
@@ -635,7 +736,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setProjects((prev) => [newProj, ...prev]);
 
-    // Push new project to Supabase
     supabase
       .from("projects")
       .insert([
@@ -685,7 +785,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setMessages((prev) => [...prev, newMsg]);
 
     setTimeout(() => {
-      const recipient = students.find((s) => s.id === receiverId);
+      const recipient = students.find((s) => String(s.id) === String(receiverId));
       if (recipient && recipient.id !== currentUser.id) {
         const replyMsg: Message = {
           id: `msg-reply-${Date.now()}`,
@@ -723,7 +823,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const switchDemoUser = (studentId: string) => {
-    const student = students.find((s) => s.id === studentId);
+    const student = students.find((s) => String(s.id) === String(studentId));
     if (student) {
       setCurrentUser(student);
     }

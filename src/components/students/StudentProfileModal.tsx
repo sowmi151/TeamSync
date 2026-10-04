@@ -37,7 +37,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     currentUser,
     isShortlisted,
     toggleShortlist,
-    comparisonList,
+    comparisonList = [],
     addToComparison,
     removeFromComparison,
   } = useApp();
@@ -46,16 +46,58 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     "profile",
   );
 
+  // Early return if no student data is passed
   if (!student) return null;
 
-  const isSelf = currentUser.id === student.id;
+  const targetId =
+    student?.id || (student as any)?._id || (student as any)?.userId || "";
+  const currentUserId =
+    currentUser?.id || (currentUser as any)?._id || "";
+  const isSelf = Boolean(currentUserId && targetId && currentUserId === targetId);
 
   const matchResult = useMemo(() => {
-    return calculateStudentMatch(currentUser, student);
+    if (!currentUser || !student) {
+      return {
+        overallScore: 0,
+        matchLabel: "Evaluation Pending",
+        confidenceLabel: "Low",
+        confidenceScore: 0,
+        recommendation: "Profile data is currently unavailable.",
+        strongMatches: [],
+        skillDifferences: {} as any,
+        factors: {} as any,
+      };
+    }
+    try {
+      return calculateStudentMatch(currentUser, student);
+    } catch {
+      return {
+        overallScore: 0,
+        matchLabel: "Analysis Unavailable",
+        confidenceLabel: "Low",
+        confidenceScore: 0,
+        recommendation: "Unable to calculate compatibility score.",
+        strongMatches: [],
+        skillDifferences: {} as any,
+        factors: {} as any,
+      };
+    }
   }, [currentUser, student]);
 
-  const saved = isShortlisted(student.id);
-  const inComparison = comparisonList.some((s) => s.id === student.id);
+  // Safe checks preventing crashes on undefined elements
+  const saved =
+    targetId && typeof isShortlisted === "function"
+      ? isShortlisted(targetId)
+      : false;
+
+  const inComparison = Array.isArray(comparisonList)
+    ? comparisonList.some(
+        (s) => s && (s.id === targetId || (s as any)._id === targetId),
+      )
+    : false;
+
+  const avatarUrl =
+    (student as any)?.avatarUrl || (student as any)?.avatar || "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -64,15 +106,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         <div className="p-6 border-b border-white/8 flex items-start justify-between gap-4 bg-[#15151C]">
           <div className="flex items-center gap-4">
             <Avatar
-              name={student.name}
-              avatarUrl={student.avatarUrl}
+              name={student.name || "Student"}
+              avatarUrl={avatarUrl}
               department={student.department}
               size="lg"
             />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-serif-title font-bold text-2xl text-[#FAF7F2]">
-                  {student.name}
+                  {student.name || "Unknown Candidate"}
                 </h2>
                 {isSelf && (
                   <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-[#2A2318] text-[#E5C07B] border border-[#D4AF37]/30">
@@ -81,11 +123,11 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-[#A1A1AA] mt-0.5">
-                <span>{student.year}</span>
+                <span>{student.year || "Year unlisted"}</span>
                 <span aria-hidden="true" className="text-[#71717A]">
                   ·
                 </span>
-                <span>{student.department}</span>
+                <span>{student.department || "General"}</span>
               </div>
             </div>
           </div>
@@ -147,7 +189,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     <span>Specialization</span>
                   </div>
                   <div className="text-xs font-medium text-[#FAF7F2]">
-                    {student.roles?.join(", ") || (
+                    {student.roles?.length ? (
+                      student.roles.join(", ")
+                    ) : (
                       <span className="text-[#71717A] italic">Unspecified</span>
                     )}
                   </div>
@@ -174,7 +218,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   </div>
                   <div className="text-xs font-medium text-[#FAF7F2]">
                     {student.availability ? (
-                      `${student.availability.hoursPerWeek} hrs/wk (${student.availability.preferences.join(", ")})`
+                      `${student.availability.hoursPerWeek ?? (student as any).hoursPerWeek ?? 0} hrs/wk (${student.availability.preferences?.join(", ") || "flexible"})`
+                    ) : (student as any).hoursPerWeek ? (
+                      `${(student as any).hoursPerWeek} hrs/wk`
                     ) : (
                       <span className="text-[#71717A] italic">
                         Not specified
@@ -184,7 +230,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </div>
               </div>
 
-              {/* Skills with 0 - 100 Proficiency Bars */}
+              {/* Skills with Proficiency Bars */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-[10px] font-bold text-[#71717A] uppercase tracking-widest font-mono">
@@ -202,8 +248,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
                 <div className="space-y-3">
                   {student.skills && student.skills.length > 0 ? (
-                    student.skills.map((skill) => (
-                      <div key={skill.name} className="space-y-1.5">
+                    student.skills.map((skill, idx) => (
+                      <div key={skill.name || idx} className="space-y-1.5">
                         <div className="flex justify-between text-xs">
                           <span className="font-medium text-[#FAF7F2]">
                             {skill.name}
@@ -214,8 +260,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                         </div>
                         <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
-                            style={{ width: `${skill.proficiency}%` }}
+                            className="h-full rounded-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, skill.proficiency || 0))}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -235,9 +283,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {student.interests && student.interests.length > 0 ? (
-                    student.interests.map((interest) => (
+                    student.interests.map((interest, idx) => (
                       <span
-                        key={interest}
+                        key={idx}
                         className="px-2.5 py-1 text-xs rounded-lg bg-[#16161D] text-[#E8E4DD] border border-white/8"
                       >
                         {interest}
@@ -262,7 +310,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                       student.projects.map((p, i) => (
                         <li key={i} className="flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                          <span>{p}</span>
+                          <span>{typeof p === "string" ? p : (p as any)?.title}</span>
                         </li>
                       ))
                     ) : (
@@ -282,7 +330,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                       student.achievements.map((a, i) => (
                         <li key={i} className="flex items-center gap-1.5">
                           <Award className="w-3.5 h-3.5 text-[#E5C07B] shrink-0" />
-                          <span>{a}</span>
+                          <span>{typeof a === "string" ? a : (a as any)?.title}</span>
                         </li>
                       ))
                     ) : (
@@ -297,7 +345,6 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           ) : (
             /* Match Breakdown */
             <div className="space-y-6">
-              {/* Score Headline */}
               <div className="p-4 rounded-xl bg-[#0D0D11] border border-[#D4AF37]/25 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-xl flex flex-col items-center justify-center bg-gradient-to-br from-[#231E16] to-[#121217] border border-[#D4AF37]/40 shadow-inner">
@@ -333,21 +380,27 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   Symmetric Strengths
                 </h4>
                 <div className="space-y-2">
-                  {matchResult.strongMatches.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg bg-[#0F0F14] border border-white/[0.06] flex items-center gap-2.5 text-xs text-[#FAF7F2]"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                      <span>{item}</span>
+                  {matchResult.strongMatches?.length ? (
+                    matchResult.strongMatches.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-lg bg-[#0F0F14] border border-white/[0.06] flex items-center gap-2.5 text-xs text-[#FAF7F2]"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                        <span>{item}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-[#71717A] italic">
+                      No mutual strengths detected.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
               {/* Skill Differences */}
-              {matchResult.skillDifferences.myStrongest &&
-                matchResult.skillDifferences.theirStrongest && (
+              {matchResult.skillDifferences?.myStrongest &&
+                matchResult.skillDifferences?.theirStrongest && (
                   <div>
                     <h4 className="text-[10px] font-bold text-[#71717A] uppercase tracking-widest mb-2 font-mono">
                       Domain Complementarity
@@ -391,7 +444,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   <span>Analytical Recommendation</span>
                 </div>
                 <p className="text-xs text-[#E8E4DD] leading-relaxed">
-                  {matchResult.recommendation}
+                  {matchResult.recommendation ||
+                    "Complementary profiles for collaborative efforts."}
                 </p>
               </div>
 
@@ -417,49 +471,56 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.06] text-[#FAF7F2]">
-                      {Object.entries(matchResult.factors).map(([key, f]) => {
-                        const labels: Record<string, string> = {
-                          skill: "Skill Compatibility",
-                          complementary: "Complementary Skills",
-                          role: "Role Compatibility",
-                          interest: "Interests",
-                          availability: "Availability",
-                          experience: "Experience",
-                        };
-                        return (
-                          <tr
-                            key={key}
-                            className={
-                              f.isValid ? "" : "text-[#71717A] bg-[#09090C]"
-                            }
-                          >
-                            <td className="py-2 px-3 font-medium">
-                              {labels[key] || key}
-                            </td>
-                            <td className="py-2 px-3 text-[11px]">
-                              {f.isValid ? (
-                                <span className="text-emerald-400">Valid</span>
-                              ) : (
-                                <span className="text-[#E5C07B]">
-                                  Redistributed
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono-nums">
-                              {f.isValid ? `${f.score}%` : "—"}
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono-nums text-[#71717A]">
-                              {Math.round(f.originalWeight * 100)}%
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono-nums font-semibold text-[#E5C07B]">
-                              {Math.round(f.effectiveWeight * 100)}%
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono-nums font-bold text-white">
-                              {f.contribution.toFixed(1)}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {matchResult.factors &&
+                        Object.entries(matchResult.factors).map(
+                          ([key, f]: [string, any]) => {
+                            const labels: Record<string, string> = {
+                              skill: "Skill Compatibility",
+                              complementary: "Complementary Skills",
+                              role: "Role Compatibility",
+                              interest: "Interests",
+                              availability: "Availability",
+                              experience: "Experience",
+                            };
+                            return (
+                              <tr
+                                key={key}
+                                className={
+                                  f?.isValid
+                                    ? ""
+                                    : "text-[#71717A] bg-[#09090C]"
+                                }
+                              >
+                                <td className="py-2 px-3 font-medium">
+                                  {labels[key] || key}
+                                </td>
+                                <td className="py-2 px-3 text-[11px]">
+                                  {f?.isValid ? (
+                                    <span className="text-emerald-400">
+                                      Valid
+                                    </span>
+                                  ) : (
+                                    <span className="text-[#E5C07B]">
+                                      Redistributed
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono-nums">
+                                  {f?.isValid ? `${f.score}%` : "—"}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono-nums text-[#71717A]">
+                                  {Math.round((f?.originalWeight ?? 0) * 100)}%
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono-nums font-semibold text-[#E5C07B]">
+                                  {Math.round((f?.effectiveWeight ?? 0) * 100)}%
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono-nums font-bold text-white">
+                                  {Number(f?.contribution ?? 0).toFixed(1)}
+                                </td>
+                              </tr>
+                            );
+                          },
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -471,10 +532,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         {/* Modal Bottom Actions */}
         <div className="p-4 border-t border-white/8 bg-[#0E0E12] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {!isSelf && (
+            {!isSelf && targetId && (
               <>
                 <button
-                  onClick={() => toggleShortlist(student.id)}
+                  onClick={() => toggleShortlist?.(targetId)}
                   className={`p-2.5 rounded-lg transition-all ${
                     saved
                       ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/35"
@@ -491,8 +552,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
                 <button
                   onClick={() => {
-                    if (inComparison) removeFromComparison(student.id);
-                    else addToComparison(student);
+                    if (inComparison) removeFromComparison?.(targetId);
+                    else addToComparison?.(student);
                   }}
                   className={`p-2.5 rounded-lg transition-all ${
                     inComparison
@@ -533,7 +594,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     onClose();
                     onOpenRequest(student);
                   }}
-                  className="py-2 px-4 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/70 text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                  className="py-2 px-4 rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/70 text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   <UserPlus className="w-3.5 h-3.5 text-[#E5C07B]" />
                   <span>Invite to Squad</span>
