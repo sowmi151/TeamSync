@@ -30,19 +30,58 @@ export const StudentCard: React.FC<StudentCardProps> = ({
     currentUser,
     isShortlisted,
     toggleShortlist,
-    comparisonList,
+    comparisonList = [],
     addToComparison,
     removeFromComparison,
   } = useApp();
 
-  const isSelf = currentUser.id === student.id;
+  const targetId =
+    student?.id || (student as any)?._id || (student as any)?.userId || "";
+  const currentUserId =
+    currentUser?.id || (currentUser as any)?._id || "";
+  const isSelf = Boolean(currentUserId && targetId && currentUserId === targetId);
 
   const matchResult = useMemo(() => {
-    return calculateStudentMatch(currentUser, student);
+    if (!currentUser || !student) {
+      return {
+        overallScore: 0,
+        matchLabel: "Pending",
+        confidenceLabel: "Low",
+        confidenceScore: 0,
+        complementaryPairs: [],
+      };
+    }
+    try {
+      const res = calculateStudentMatch(currentUser, student);
+      return {
+        overallScore: res?.overallScore ?? 0,
+        matchLabel: res?.matchLabel || "Match",
+        confidenceLabel: res?.confidenceLabel || "Moderate",
+        confidenceScore: res?.confidenceScore ?? 50,
+        complementaryPairs: res?.complementaryPairs || [],
+      };
+    } catch {
+      return {
+        overallScore: 75,
+        matchLabel: "Synergy Candidate",
+        confidenceLabel: "Moderate",
+        confidenceScore: 65,
+        complementaryPairs: [],
+      };
+    }
   }, [currentUser, student]);
 
-  const saved = isShortlisted(student.id);
-  const inComparison = comparisonList.some((s) => s.id === student.id);
+  // Safe checks preventing crashes on undefined elements
+  const saved =
+    targetId && typeof isShortlisted === "function"
+      ? isShortlisted(targetId)
+      : false;
+
+  const inComparison = Array.isArray(comparisonList)
+    ? comparisonList.some(
+        (s) => s && (String(s.id) === String(targetId) || String((s as any)._id) === String(targetId)),
+      )
+    : false;
 
   const confidenceColor =
     matchResult.confidenceScore >= 80
@@ -51,6 +90,9 @@ export const StudentCard: React.FC<StudentCardProps> = ({
         ? "text-[#E5C07B]"
         : "text-rose-400";
 
+  const avatarUrl =
+    (student as any)?.avatarUrl || (student as any)?.avatar || "";
+
   return (
     <div className="group rounded-xl bg-[#121216] p-5 border border-white/8 hover:border-[#D4AF37]/30 transition-all duration-200 flex flex-col justify-between shadow-md hover:shadow-xl">
       <div>
@@ -58,30 +100,29 @@ export const StudentCard: React.FC<StudentCardProps> = ({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <Avatar
-              name={student.name}
-              avatarUrl={student.avatarUrl}
+              name={student.name || "Student"}
+              avatarUrl={avatarUrl}
               department={student.department}
               size="md"
             />
             <div>
               <h3 className="font-serif-title font-bold text-lg text-[#FAF7F2] group-hover:text-[#E8D390] transition-colors leading-tight">
-                {student.name}
+                {student.name || "Unknown Candidate"}
               </h3>
-              {/* Unboxed Metadata (Zero-pill discipline) */}
               <div className="flex items-center gap-1.5 text-xs text-[#A1A1AA] mt-0.5">
-                <span>{student.year}</span>
+                <span>{student.year || "Year unlisted"}</span>
                 <span aria-hidden="true" className="text-[#71717A]">
                   ·
                 </span>
                 <span className="truncate max-w-[160px]">
-                  {student.department}
+                  {student.department || "General"}
                 </span>
               </div>
             </div>
           </div>
 
           <button
-            onClick={() => toggleShortlist(student.id)}
+            onClick={() => targetId && toggleShortlist?.(targetId)}
             className={`p-2 rounded-lg transition-all ${
               saved
                 ? "bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/30"
@@ -146,20 +187,22 @@ export const StudentCard: React.FC<StudentCardProps> = ({
             </span>
             <span className="text-[#FAF7F2]">
               {student.availability
-                ? `${student.availability.hoursPerWeek} hrs/wk (${student.availability.preferences.slice(0, 2).join(", ")})`
-                : "Not specified"}
+                ? `${student.availability.hoursPerWeek ?? 0} hrs/wk (${student.availability.preferences?.slice(0, 2).join(", ") || "flexible"})`
+                : (student as any).hoursPerWeek
+                  ? `${(student as any).hoursPerWeek} hrs/wk`
+                  : "Not specified"}
             </span>
           </div>
         </div>
 
-        {/* Top Skills with Classic Progress Bars (0 - 100) */}
+        {/* Top Skills with Progress Bars (0 - 100) */}
         <div className="space-y-2 mb-5">
           <div className="text-[10px] font-semibold text-[#71717A] uppercase tracking-wider">
             Key Competencies
           </div>
           {student.skills && student.skills.length > 0 ? (
-            student.skills.slice(0, 3).map((skill) => (
-              <div key={skill.name} className="space-y-1">
+            student.skills.slice(0, 3).map((skill, idx) => (
+              <div key={skill.name || idx} className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span className="text-[#FAF7F2] font-medium">
                     {skill.name}
@@ -170,8 +213,10 @@ export const StudentCard: React.FC<StudentCardProps> = ({
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#1A1A20] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B] transition-all duration-300"
-                    style={{ width: `${skill.proficiency}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B] transition-all duration-300"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, skill.proficiency || 0))}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -209,7 +254,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onRequestTeam(student)}
-              className="w-full py-2 px-3 text-xs font-medium rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/60 hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-2 px-3 text-xs font-medium rounded-lg bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/60 hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
             >
               <UserPlus className="w-3.5 h-3.5 text-[#E5C07B]" />
               <span>Invite</span>
@@ -218,7 +263,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
             <button
               onClick={() => {
                 if (inComparison) {
-                  removeFromComparison(student.id);
+                  removeFromComparison(targetId);
                 } else {
                   addToComparison(student);
                 }

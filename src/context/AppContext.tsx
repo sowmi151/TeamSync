@@ -109,7 +109,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return SEED_STUDENTS[0];
   });
 
-  // Reference keeps current user ID fresh inside real-time event callbacks without tearing down channels
   const currentUserRef = useRef<Student>(currentUser);
   useEffect(() => {
     currentUserRef.current = currentUser;
@@ -187,10 +186,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!studentError && dbStudents) {
         const cloudStudents: Student[] = dbStudents.map((cs: any) => {
+          const avatarGenerated =
+            cs.avatar_url ||
+            cs.avatar ||
+            cs.github_url ||
+            `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
+              cs.full_name || cs.id,
+            )}`;
+
           const skillsList =
             cs.student_skills && cs.student_skills.length > 0
               ? cs.student_skills.map((s: any) => ({
-                  name: s.skill_name,
+                  name: s.skill_name || "Skill",
                   proficiency: s.proficiency_score || 80,
                   category: s.category || "Technical",
                 }))
@@ -205,13 +212,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               ? cs.student_roles.map((r: any) => r.role_name)
               : ["Full Stack Engineer", "Team Contributor"];
 
-          return {
+          const studentObj: any = {
             id: String(cs.id),
             name: cs.full_name || "Scholar",
-            email: cs.email,
-            avatar:
-              cs.github_url ||
-              `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cs.full_name || cs.id)}`,
+            email: cs.email || "",
+            avatar: avatarGenerated,
+            avatarUrl: avatarGenerated,
             university: cs.department || "Computer Science Institute",
             department: cs.department || "Computer Science",
             year: cs.academic_year || "1st Year",
@@ -220,12 +226,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             roles: rolesList,
             interests: ["Collaborative AI", "Web Systems", "Cloud Architecture"],
             bio: cs.bio || "Passionate scholar focused on innovative collaborative projects.",
-            compatibility: 88,
-            matchReasons: ["Complementary tech stack", "Aligned academic interests"],
-            hoursPerWeek: cs.hours_per_week || 15,
+            availability: {
+              hoursPerWeek: cs.hours_per_week || 15,
+              preferences: ["remote", "flexible"],
+            },
             githubUrl: cs.github_url || "",
             linkedinUrl: cs.linkedin_url || "",
           };
+
+          return studentObj as Student;
         });
 
         setStudents((prev) => {
@@ -261,24 +270,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         .select("*");
 
       if (!projError && dbProjects && dbProjects.length > 0) {
-        const formattedProjects: Project[] = dbProjects.map((p: any) => ({
-          id: String(p.id),
-          title: p.title,
-          description: p.description || "Active collaborative team project.",
-          category: p.category || "Web App",
-          createdAt: p.created_at ? p.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-          members: [
-            {
-              studentId: String(p.creator_id || currentUserRef.current.id),
-              role: "Team Lead",
-              joinedAt: new Date().toISOString().split("T")[0],
-            },
-          ],
-          teamSize: p.team_size || 4,
-          requiredSkills: Array.isArray(p.required_skills) ? p.required_skills : ["React", "TypeScript"],
-          requiredRoles: Array.isArray(p.required_roles) ? p.required_roles : ["Developer", "Designer"],
-          status: (p.status as any) || "open",
-        }));
+        const formattedProjects: Project[] = dbProjects.map((p: any) => {
+          const projectObj: any = {
+            id: String(p.id),
+            title: p.title,
+            description: p.description || "Active collaborative team project.",
+            category: p.category || "Web App",
+            creatorId: String(p.creator_id || currentUserRef.current.id),
+            createdAt: p.created_at ? p.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
+            members: [
+              {
+                studentId: String(p.creator_id || currentUserRef.current.id),
+                role: "Team Lead",
+                joinedAt: new Date().toISOString().split("T")[0],
+              },
+            ],
+            teamSize: p.team_size || 4,
+            requiredSkills: Array.isArray(p.required_skills) ? p.required_skills : ["React", "TypeScript"],
+            requiredRoles: Array.isArray(p.required_roles) ? p.required_roles : ["Developer", "Designer"],
+            status: (p.status as any) || "open",
+          };
+          return projectObj as Project;
+        });
 
         setProjects((prev) => {
           const projIds = new Set(formattedProjects.map((p) => p.id));
@@ -350,7 +363,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               return [incoming, ...prev];
             });
 
-            // Compare against latest active user ID
             const activeId = String(currentUserRef.current.id);
             if (incoming.receiverId === activeId) {
               const newNotif: NotificationItem = {
@@ -382,18 +394,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "projects" },
-        () => syncWithSupabase(),
+        () => {
+          syncWithSupabase();
+        },
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "students" },
-        () => syncWithSupabase(),
+        () => {
+          syncWithSupabase();
+        },
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("[TeamSync] Realtime WebSocket connected successfully.");
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -507,6 +519,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setCurrentUser(next);
     setStudents((all) => all.map((s) => (s.id === next.id ? next : s)));
 
+    const hours =
+      (updated as any)?.hoursPerWeek ??
+      updated.availability?.hoursPerWeek ??
+      currentUser.availability?.hoursPerWeek;
+
     try {
       await supabase
         .from("students")
@@ -517,7 +534,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           academic_year: next.year,
           github_url: next.githubUrl,
           linkedin_url: next.linkedinUrl,
-          hours_per_week: next.hoursPerWeek,
+          hours_per_week: hours,
         })
         .eq("email", next.email);
     } catch (e) {
@@ -599,7 +616,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: new Date().toISOString(),
     };
 
-    // Instant local optimistic update
     setRequests((prev) => [newReq, ...prev]);
 
     try {
@@ -724,6 +740,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const newProj: Project = {
       ...newProjectData,
       id: `proj-${Date.now()}`,
+      creatorId: currentUser.id,
       createdAt: new Date().toISOString().split("T")[0],
       members: [
         {

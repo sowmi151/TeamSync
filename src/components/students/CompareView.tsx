@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useApp } from "../../context/AppContext";
 import { Avatar } from "../common/Avatar";
 import { calculateStudentMatch } from "../../utils/matching/studentMatching";
+import { Student } from "../../types";
 import {
   AlertCircle,
   Briefcase,
@@ -18,18 +19,32 @@ export const CompareView: React.FC<{
 }> = ({ onOpenMessage, onOpenRequest }) => {
   const {
     currentUser,
-    students,
-    comparisonList,
+    students = [],
+    comparisonList = [],
     addToComparison,
     removeFromComparison,
     clearComparison,
   } = useApp();
 
-  const allComparedSkills = Array.from(
-    new Set(
-      comparisonList.flatMap((s) => (s.skills || []).map((sk) => sk.name)),
-    ),
-  ).sort();
+  // Safely filter valid students to prevent crashes from undefined array items
+  const validComparisonList = useMemo(() => {
+    return (comparisonList || []).filter(
+      (s): s is Student => Boolean(s && (s.id || (s as any)._id || (s as any).userId)),
+    );
+  }, [comparisonList]);
+
+  // Safely derive unique skills
+  const allComparedSkills = useMemo(() => {
+    return Array.from(
+      new Set(
+        validComparisonList
+          .flatMap((s) => (s?.skills || []).map((sk) => sk?.name))
+          .filter(Boolean),
+      ),
+    ).sort();
+  }, [validComparisonList]);
+
+  const currentUserId = currentUser?.id || (currentUser as any)?._id || "";
 
   return (
     <div className="space-y-6">
@@ -46,7 +61,7 @@ export const CompareView: React.FC<{
         </div>
 
         <div className="flex items-center gap-3">
-          {comparisonList.length > 0 && (
+          {validComparisonList.length > 0 && (
             <button
               onClick={clearComparison}
               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#14141A] hover:bg-[#1C1C24] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-all flex items-center gap-1.5"
@@ -56,13 +71,15 @@ export const CompareView: React.FC<{
             </button>
           )}
 
-          {comparisonList.length < 4 && (
+          {validComparisonList.length < 4 && (
             <div className="relative">
               <select
                 onChange={(e) => {
                   const id = e.target.value;
                   if (!id) return;
-                  const found = students.find((s) => s.id === id);
+                  const found = students.find(
+                    (s) => String(s.id) === id || String((s as any)._id) === id,
+                  );
                   if (found) addToComparison(found);
                   e.target.value = "";
                 }}
@@ -70,12 +87,20 @@ export const CompareView: React.FC<{
                 className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#121217] text-[#FAF7F2] border border-white/[0.12] cursor-pointer focus:outline-none"
               >
                 <option value="" disabled>
-                  + Add Scholar ({comparisonList.length}/4)
+                  + Add Scholar ({validComparisonList.length}/4)
                 </option>
                 {students
-                  .filter((s) => !comparisonList.some((c) => c.id === s.id))
+                  .filter(
+                    (s) =>
+                      s &&
+                      !validComparisonList.some(
+                        (c) =>
+                          String(c.id) === String(s.id) ||
+                          String((c as any)._id) === String(s.id),
+                      ),
+                  )
                   .map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <option key={s.id || (s as any)._id} value={s.id || (s as any)._id}>
                       {s.name} ({s.roles?.[0] || "Student"})
                     </option>
                   ))}
@@ -85,7 +110,7 @@ export const CompareView: React.FC<{
         </div>
       </div>
 
-      {comparisonList.length === 0 ? (
+      {validComparisonList.length === 0 ? (
         <div className="p-12 rounded-xl bg-[#121217] text-center border border-white/8 space-y-4">
           <Sparkles className="w-8 h-8 text-[#D4AF37] mx-auto opacity-75" />
           <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2]">
@@ -98,7 +123,7 @@ export const CompareView: React.FC<{
           <div className="flex justify-center gap-2 pt-2">
             {students.slice(0, 3).map((s) => (
               <button
-                key={s.id}
+                key={s.id || (s as any)._id}
                 onClick={() => addToComparison(s)}
                 className="px-3 py-1.5 rounded-lg bg-[#181822] text-xs font-medium text-[#FAF7F2] border border-white/8 hover:border-[#D4AF37]/40"
               >
@@ -115,31 +140,46 @@ export const CompareView: React.FC<{
                 <th className="p-4 w-48 text-[10px] font-bold text-[#71717A] uppercase tracking-widest font-mono">
                   Attribute / Candidate
                 </th>
-                {comparisonList.map((student) => {
-                  const match = calculateStudentMatch(currentUser, student);
-                  const isSelf = student.id === currentUser.id;
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  let match = {
+                    overallScore: 80,
+                    matchLabel: "Match Candidate",
+                    complementaryPairs: [] as any[],
+                  };
+                  if (currentUser && student) {
+                    try {
+                      match = calculateStudentMatch(currentUser, student);
+                    } catch {
+                      // Fallback if matching math fails
+                    }
+                  }
+                  const isSelf = String(studentId) === String(currentUserId);
+                  const avatarUrl =
+                    (student as any).avatarUrl || (student as any).avatar || "";
+
                   return (
-                    <th key={student.id} className="p-4 w-64 align-top">
+                    <th key={studentId} className="p-4 w-64 align-top">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
                           <Avatar
-                            name={student.name}
-                            avatarUrl={student.avatarUrl}
+                            name={student.name || "Scholar"}
+                            avatarUrl={avatarUrl}
                             department={student.department}
                             size="md"
                           />
                           <div>
                             <div className="font-serif-title font-bold text-base text-[#FAF7F2]">
-                              {student.name}
+                              {student.name || "Unknown Candidate"}
                             </div>
                             <div className="text-[11px] text-[#A1A1AA]">
-                              {student.year} · {student.department}
+                              {student.year || "Year unlisted"} · {student.department || "General"}
                             </div>
                           </div>
                         </div>
 
                         <button
-                          onClick={() => removeFromComparison(student.id)}
+                          onClick={() => removeFromComparison(studentId)}
                           className="p-1 rounded hover:bg-[#1E1E26] text-[#71717A] hover:text-[#FAF7F2]"
                           title="Remove from comparison"
                         >
@@ -154,7 +194,7 @@ export const CompareView: React.FC<{
                           </span>
                           <span className="font-mono-nums font-bold text-xs text-[#E5C07B]">
                             {match.overallScore}% (
-                            {match.matchLabel.split(" ")[0]})
+                            {match.matchLabel?.split(" ")[0] || "Match"})
                           </span>
                         </div>
                       )}
@@ -171,18 +211,21 @@ export const CompareView: React.FC<{
                   <Briefcase className="w-3.5 h-3.5 text-[#C5A880]" />
                   <span>Specialization</span>
                 </td>
-                {comparisonList.map((student) => (
-                  <td key={student.id} className="p-4 text-[#FAF7F2]">
-                    {student.roles && student.roles.length > 0 ? (
-                      student.roles.join(", ")
-                    ) : (
-                      <span className="text-[#E5C07B] italic flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Role unspecified</span>
-                      </span>
-                    )}
-                  </td>
-                ))}
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  return (
+                    <td key={studentId} className="p-4 text-[#FAF7F2]">
+                      {student.roles && student.roles.length > 0 ? (
+                        student.roles.join(", ")
+                      ) : (
+                        <span className="text-[#E5C07B] italic flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Role unspecified</span>
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
 
               {/* Experience Level */}
@@ -191,20 +234,23 @@ export const CompareView: React.FC<{
                   <GraduationCap className="w-3.5 h-3.5 text-[#C5A880]" />
                   <span>Seniority</span>
                 </td>
-                {comparisonList.map((student) => (
-                  <td key={student.id} className="p-4 text-[#FAF7F2]">
-                    {student.experience ? (
-                      <span className="font-medium text-[#FAF7F2]">
-                        {student.experience}
-                      </span>
-                    ) : (
-                      <span className="text-[#E5C07B] italic flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Not specified (Weight redistributed)</span>
-                      </span>
-                    )}
-                  </td>
-                ))}
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  return (
+                    <td key={studentId} className="p-4 text-[#FAF7F2]">
+                      {student.experience ? (
+                        <span className="font-medium text-[#FAF7F2]">
+                          {student.experience}
+                        </span>
+                      ) : (
+                        <span className="text-[#E5C07B] italic flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Not specified (Weight redistributed)</span>
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
 
               {/* Availability */}
@@ -213,25 +259,35 @@ export const CompareView: React.FC<{
                   <Clock className="w-3.5 h-3.5 text-[#C5A880]" />
                   <span>Commitment</span>
                 </td>
-                {comparisonList.map((student) => (
-                  <td key={student.id} className="p-4 text-[#FAF7F2]">
-                    {student.availability ? (
-                      <div>
-                        <span className="font-semibold text-[#FAF7F2]">
-                          {student.availability.hoursPerWeek} hrs/week
-                        </span>
-                        <div className="text-[11px] text-[#A1A1AA] mt-0.5">
-                          {student.availability.preferences.join(", ")}
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  const hours =
+                    student.availability?.hoursPerWeek ??
+                    (student as any).hoursPerWeek;
+                  const preferences = student.availability?.preferences || [
+                    "flexible",
+                  ];
+
+                  return (
+                    <td key={studentId} className="p-4 text-[#FAF7F2]">
+                      {hours !== undefined ? (
+                        <div>
+                          <span className="font-semibold text-[#FAF7F2]">
+                            {hours} hrs/week
+                          </span>
+                          <div className="text-[11px] text-[#A1A1AA] mt-0.5">
+                            {preferences.join(", ")}
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <span className="text-[#E5C07B] italic flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Not specified</span>
-                      </span>
-                    )}
-                  </td>
-                ))}
+                      ) : (
+                        <span className="text-[#E5C07B] italic flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Not specified</span>
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
 
               {/* Interests */}
@@ -239,27 +295,30 @@ export const CompareView: React.FC<{
                 <td className="p-4 font-semibold text-[#A1A1AA]">
                   <span>Domains</span>
                 </td>
-                {comparisonList.map((student) => (
-                  <td key={student.id} className="p-4 text-[#FAF7F2]">
-                    {student.interests && student.interests.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {student.interests.map((int) => (
-                          <span
-                            key={int}
-                            className="px-2 py-0.5 rounded bg-[#0C0C10] border border-white/[0.06] text-[11px] text-[#E8E4DD]"
-                          >
-                            {int}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-[#E5C07B] italic flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Unspecified</span>
-                      </span>
-                    )}
-                  </td>
-                ))}
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  return (
+                    <td key={studentId} className="p-4 text-[#FAF7F2]">
+                      {student.interests && student.interests.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {student.interests.map((int) => (
+                            <span
+                              key={int}
+                              className="px-2 py-0.5 rounded bg-[#0C0C10] border border-white/[0.06] text-[11px] text-[#E8E4DD]"
+                            >
+                              {int}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[#E5C07B] italic flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Unspecified</span>
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
 
               {/* Complementary Synergy with You */}
@@ -267,13 +326,24 @@ export const CompareView: React.FC<{
                 <td className="p-4 font-semibold text-[#E5C07B]">
                   <span>Complementary Synergy</span>
                 </td>
-                {comparisonList.map((student) => {
-                  const match = calculateStudentMatch(currentUser, student);
-                  const isSelf = student.id === currentUser.id;
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  let match = {
+                    overallScore: 80,
+                    complementaryPairs: [] as any[],
+                  };
+                  if (currentUser && student) {
+                    try {
+                      match = calculateStudentMatch(currentUser, student);
+                    } catch {
+                      // Fallback
+                    }
+                  }
+                  const isSelf = String(studentId) === String(currentUserId);
                   if (isSelf) {
                     return (
                       <td
-                        key={student.id}
+                        key={studentId}
                         className="p-4 text-[#71717A] italic"
                       >
                         Self profile
@@ -281,8 +351,8 @@ export const CompareView: React.FC<{
                     );
                   }
                   return (
-                    <td key={student.id} className="p-4 text-[#FAF7F2]">
-                      {match.complementaryPairs.length > 0 ? (
+                    <td key={studentId} className="p-4 text-[#FAF7F2]">
+                      {match.complementaryPairs && match.complementaryPairs.length > 0 ? (
                         <div className="space-y-1">
                           <span className="font-semibold text-[#E8D390]">
                             {match.complementaryPairs[0].studentASkill} +{" "}
@@ -305,7 +375,7 @@ export const CompareView: React.FC<{
               {/* Skills Matrix Breakdown */}
               <tr className="bg-[#15151B] border-t border-b border-white/8">
                 <td
-                  colSpan={comparisonList.length + 1}
+                  colSpan={validComparisonList.length + 1}
                   className="py-2 px-4 font-mono font-bold text-[#E5C07B] uppercase tracking-widest text-[10px]"
                 >
                   Technical Competency Ratings (0 - 100)
@@ -320,12 +390,14 @@ export const CompareView: React.FC<{
                   <td className="p-4 font-medium text-[#FAF7F2]">
                     {skillName}
                   </td>
-                  {comparisonList.map((student) => {
+                  {validComparisonList.map((student) => {
+                    const studentId = student.id || (student as any)._id;
                     const sk = (student.skills || []).find(
-                      (s) => s.name.toLowerCase() === skillName.toLowerCase(),
+                      (s) =>
+                        s?.name?.toLowerCase() === skillName.toLowerCase(),
                     );
                     return (
-                      <td key={student.id} className="p-4">
+                      <td key={studentId} className="p-4">
                         {sk ? (
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
@@ -335,7 +407,7 @@ export const CompareView: React.FC<{
                             </div>
                             <div className="w-full h-1.5 rounded-full bg-[#1A1A22] overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-linear-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
+                                className="h-full rounded-full bg-gradient-to-r from-[#967246] via-[#B8860B] to-[#E5C07B]"
                                 style={{ width: `${sk.proficiency}%` }}
                               />
                             </div>
@@ -352,15 +424,16 @@ export const CompareView: React.FC<{
               {/* Quick Actions Row */}
               <tr className="bg-[#0F0F14]">
                 <td className="p-4 font-semibold text-[#71717A]">Actions</td>
-                {comparisonList.map((student) => {
-                  const isSelf = student.id === currentUser.id;
+                {validComparisonList.map((student) => {
+                  const studentId = student.id || (student as any)._id;
+                  const isSelf = String(studentId) === String(currentUserId);
                   return (
-                    <td key={student.id} className="p-4">
+                    <td key={studentId} className="p-4">
                       {!isSelf ? (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onOpenRequest(student)}
-                            className="px-3 py-1.5 rounded-md bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 text-xs font-semibold hover:border-[#D4AF37]/60"
+                            className="px-3 py-1.5 rounded-md bg-gradient-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 text-xs font-semibold hover:border-[#D4AF37]/60"
                           >
                             Invite
                           </button>
