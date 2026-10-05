@@ -70,6 +70,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
         if (authError) throw authError;
 
+        if (!authData.session) {
+          setErrorMsg("Check your email to confirm your account, then sign in.");
+          return;
+        }
+
         const studentId = authData.user?.id || `student-${Date.now()}`;
         const displayName = name.trim() || email.split("@")[0];
 
@@ -107,6 +112,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         provider,
         options: {
           redirectTo: window.location.origin,
+          ...(provider === "google" && {
+            queryParams: { prompt: "select_account" },
+          }),
         },
       });
       if (error) throw error;

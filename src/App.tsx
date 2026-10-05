@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { isOAuthReturn, supabase } from "./lib/supabase";
 import { AppProvider, useApp } from "./context/AppContext";
 import { Header } from "./components/common/Header";
 import { DashboardView } from "./components/dashboard/DashboardView";
@@ -20,6 +22,7 @@ import { DownloadZipModal } from "./components/export/DownloadZipModal";
 import { DatabaseModal } from "./components/database/DatabaseModal";
 import { PythonModal } from "./components/python/PythonModal";
 import { LoginView } from "./components/auth/LoginView";
+import { ConfirmProfileView } from "./components/auth/ConfirmProfileView";
 import { Student } from "./types";
 import { Code, Database, Download, RotateCcw, LogOut } from "lucide-react";
 
@@ -33,10 +36,67 @@ const MainContent: React.FC = () => {
     setSelectedProjectForModal,
     currentUser,
     resetDemoData,
-    updateCurrentUserProfile,
+    setCurrentUser,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [signedInThisVisit, setSignedInThisVisit] = useState(isOAuthReturn);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let authEventReceived = false;
+    const applySession = (session: Session | null) => {
+      if (!active) return;
+      setNeedsConfirmation(Boolean(session &&
+        session.user.app_metadata.provider === "google" &&
+        session.user.user_metadata.teamsync_profile_confirmed !== true));
+      if (session) {
+        const user = session.user;
+        const email = user.email || "";
+        setCurrentUser((previous) => ({
+          ...(previous.id === user.id ? previous : {
+            id: user.id, name: "", email: "", department: "", year: "",
+            bio: "", skills: [], interests: [], roles: [], experience: null,
+            availability: null, projects: [], achievements: [],
+          }),
+          id: user.id,
+          email,
+          name: user.user_metadata.full_name || user.user_metadata.name ||
+            user.user_metadata.user_name || email.split("@")[0] || "Scholar",
+          avatarUrl: user.user_metadata.avatar_url || "",
+        }));
+      }
+      setIsAuthenticated(Boolean(session) && signedInThisVisit);
+      setCheckingSession(false);
+    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      authEventReceived = true;
+      applySession(session);
+    });
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active || authEventReceived) return;
+      if (error) setAuthError(error.message);
+      applySession(data.session);
+    }).catch((error: Error) => {
+      if (!active || authEventReceived) return;
+      setAuthError(error.message);
+      applySession(null);
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [setCurrentUser, signedInThisVisit]);
+
+  const handleLogout = async () => {
+    setAuthError(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) setAuthError(error.message);
+    else {
+      setSignedInThisVisit(false);
+      setIsAuthenticated(false);
+    }
+  };
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showDownloadZip, setShowDownloadZip] = useState(false);
@@ -56,40 +116,38 @@ const MainContent: React.FC = () => {
     setRequestTargetStudent(student);
   };
 
-  // --- THE MAGIC FIX IS HERE ---
+  if (checkingSession) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Checking your session...</div>;
+  }
+
   if (!isAuthenticated) {
     return (
       <LoginView
-        onLogin={(newName, newEmail) => {
-          setIsAuthenticated(true);
-
-          // 1. If no name was typed (Log In mode), generate one from the email prefix
-          let finalName = newName;
-          if (!finalName && newEmail && newEmail !== currentUser.email) {
-            finalName = newEmail.split("@")[0]; // e.g. "akshyalux2619"
-          }
-
-          if (finalName || newEmail) {
-            updateCurrentUserProfile({
-              name: finalName || currentUser.name,
-              email: newEmail || currentUser.email,
-              avatarUrl: "", // 2. Clear Rahul's photo so your initials (AL) take over!
-            });
-          }
-        }}
+        onLogin={() => setSignedInThisVisit(true)}
       />
     );
+  }
+
+  if (needsConfirmation) {
+    return <ConfirmProfileView name={currentUser.name} email={currentUser.email}
+      onComplete={(name) => {
+        setCurrentUser((previous) => ({ ...previous, name }));
+        setNeedsConfirmation(false);
+        setActiveTab("dashboard");
+      }} onLogout={handleLogout} />;
   }
 
   return (
     <div className="min-h-screen text-[#FAF7F2] flex flex-col font-sans selection:bg-[#00FFFF]/30 selection:text-white">
       <Header
-        onLogout={() => setIsAuthenticated(false)}
+        onLogout={handleLogout}
         onOpenDownloadZip={() => setShowDownloadZip(true)}
         onOpenCreateProject={() => setShowCreateProject(true)}
         onOpenDatabaseModal={() => setShowDatabaseModal(true)}
         onOpenPythonModal={() => setShowPythonModal(true)}
       />
+
+      {authError && <div role="alert" className="p-4 text-red-400">{authError}</div>}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         {activeTab === "dashboard" && (

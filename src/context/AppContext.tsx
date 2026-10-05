@@ -43,7 +43,7 @@ export type NavigationTab =
 
 interface AppContextType {
   currentUser: Student;
-  setCurrentUser: (student: Student) => void;
+  setCurrentUser: React.Dispatch<React.SetStateAction<Student>>;
   students: Student[];
   projects: Project[];
   requests: TeamRequest[];
