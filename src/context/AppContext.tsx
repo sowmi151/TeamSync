@@ -13,6 +13,7 @@ import React, {
   useRef,
 } from "react";
 import { supabase } from "../lib/supabase";
+import { validateMedia } from "../lib/chatMedia";
 import {
   Student,
   Project,
@@ -83,6 +84,7 @@ interface AppContextType {
     receiverId: string,
     content: string,
     projectId?: string,
+    attachment?: File,
   ) => Promise<void>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
@@ -805,6 +807,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           id: String(row.id), senderId: String(row.sender_id), receiverId: String(row.receiver_id),
           content: row.content, timestamp: row.created_at,
           projectId: row.project_id || undefined, isRead: Boolean(row.read_status),
+          readAt: row.read_at || undefined, attachmentPath: row.attachment_path || undefined,
+          attachmentType: row.attachment_type || undefined, attachmentName: row.attachment_name || undefined,
         })));
       } finally { fetching = false; }
     };
@@ -817,23 +821,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => { active = false; window.clearInterval(timer); void supabase.removeChannel(channel); };
   }, [currentUser.id]);
 
-  const sendMessage = async (receiverId: string, content: string, projectId?: string): Promise<void> => {
+  const sendMessage = async (receiverId: string, content: string, projectId?: string, attachment?: File): Promise<void> => {
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed && !attachment) return;
     if (!currentUser.id || receiverId === currentUser.id) throw new Error("Choose another user to message.");
     const newMsg: Message = {
       id: crypto.randomUUID(), senderId: currentUser.id, receiverId, projectId,
-      content: trimmed, timestamp: new Date().toISOString(), isRead: false,
+      content: trimmed || (attachment?.type.startsWith("image/") ? "Photo" : "Video"), timestamp: new Date().toISOString(), isRead: false,
     };
+    if (attachment) {
+      validateMedia(attachment);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) throw new Error("Sign in again to upload a file.");
+      const extension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" } as Record<string,string>)[attachment.type];
+      const path = `${sessionData.session.user.id}/${receiverId}/${newMsg.id}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, attachment, { contentType: attachment.type });
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      newMsg.attachmentPath = path;
+      newMsg.attachmentType = attachment.type.startsWith("image/") ? "image" : "video";
+      newMsg.attachmentName = attachment.name;
+    }
     const { data, error } = await supabase.from("messages").insert({
       id: newMsg.id, sender_id: newMsg.senderId, receiver_id: receiverId,
-      project_id: projectId || null, content: trimmed, created_at: newMsg.timestamp, read_status: false,
+      project_id: projectId || null, content: newMsg.content, created_at: newMsg.timestamp, read_status: false,
+      ...(newMsg.attachmentPath && { attachment_path: newMsg.attachmentPath, attachment_type: newMsg.attachmentType, attachment_name: newMsg.attachmentName }),
     }).select("id").single();
-    if (error) throw new Error(`Message was not sent: ${error.message}`);
+    if (error) {
+      if (newMsg.attachmentPath) await supabase.storage.from("chat-media").remove([newMsg.attachmentPath]);
+      throw new Error(`Message was not sent: ${error.message}`);
+    }
     if (!data) throw new Error("Message was not saved. Please check database permissions.");
     if (currentUserRef.current.id !== newMsg.senderId) return;
     setMessages((prev) => prev.some((message) => message.id === newMsg.id) ? prev : [...prev, newMsg]);
   };
+  useEffect(() => {
+    if (!currentUser.id) return;
+    const heartbeat = () => {
+      if (document.visibilityState === "visible" && document.hasFocus()) void supabase.rpc("teamsync_activity", { active_now: true });
+    };
+    const leave = () => { void supabase.rpc("teamsync_activity", { active_now: false }); };
+    const visibility = () => document.visibilityState === "visible" ? heartbeat() : leave();
+    heartbeat();
+    const timer = window.setInterval(heartbeat, 30000);
+    window.addEventListener("focus", heartbeat);
+    window.addEventListener("blur", leave);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", heartbeat);
+      window.removeEventListener("blur", leave);
+      document.removeEventListener("visibilitychange", visibility);
+      leave();
+    };
+  }, [currentUser.id]);
+
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
@@ -916,4 +957,5 @@ export const useApp = () => {
   }
   return context;
 };
+
 
