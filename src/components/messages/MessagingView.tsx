@@ -6,6 +6,19 @@ import { MessageSquare, Search, Send, Paperclip, X, CheckCheck, Check } from "lu
 import { supabase } from "../../lib/supabase";
 import { ChatMedia, MEDIA_TYPES, validateMedia } from "../../lib/chatMedia";
 
+export function timeAgo(timestamp: string, now: number): string {
+  const parsed = Date.parse(timestamp);
+  if (!Number.isFinite(parsed)) return "time unavailable";
+  const seconds = Math.max(0, Math.floor((now - parsed) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 export const MessagingView: React.FC<{
   initialSelectedStudent?: Student | null;
 }> = ({ initialSelectedStudent }) => {
@@ -47,10 +60,16 @@ export const MessagingView: React.FC<{
   useEffect(() => {
     let active = true;
     const refresh = async () => {
+      // Also record activity on entering Messages and report permission/setup failures.
+      if (document.visibilityState === "visible" && document.hasFocus()) {
+        const { error: heartbeatError } = await supabase.rpc("teamsync_activity", { active_now: true });
+        if (!active) return;
+        if (heartbeatError) setStatusError(`Activity update failed: ${heartbeatError.message}`);
+      }
       const { data, error } = await supabase.from("user_activity").select("student_id,last_active,online");
       if (!active) return;
       setClock(Date.now());
-      if (error) { setStatusError("Activity status unavailable. Database setup is required."); return; }
+      if (error) { setStatusError(`Activity status unavailable: ${error.message}`); return; }
       setActivity(Object.fromEntries((data || []).map((row) => [row.student_id, row])));
     };
     void refresh();
@@ -59,9 +78,16 @@ export const MessagingView: React.FC<{
   }, []);
   const activityLabel = (id: string) => {
     const entry = activity[id];
-    if (!entry) return "Last active unavailable";
-    if (entry.online && clock - Date.parse(entry.last_active) < 75000) return "Online";
-    return `Last active ${new Date(entry.last_active).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+    if (entry?.online && clock - Date.parse(entry.last_active) < 75000) return "Online";
+    // Sent messages and read receipts are real interactions, even without a heartbeat.
+    const recordedTimes = messages.flatMap((message) => [
+      ...(message.senderId === id ? [message.timestamp] : []),
+      ...(message.receiverId === id && message.isRead && message.readAt ? [message.readAt] : []),
+    ]);
+    if (entry?.last_active) recordedTimes.push(entry.last_active);
+    const latest = recordedTimes.filter((time) => Number.isFinite(Date.parse(time)))
+      .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
+    return latest ? `Last active ${timeAgo(latest, clock)}` : "No activity recorded yet";
   };
   useEffect(() => {
     if (initialSelectedStudent && initialSelectedStudent.id !== currentUser.id) {
@@ -108,7 +134,7 @@ export const MessagingView: React.FC<{
       if (!ids.length) return;
       ids.forEach((id) => inFlight.add(id));
       void supabase.rpc("teamsync_mark_seen", { message_ids: ids }).then(({ error }) => {
-        if (error) { ids.forEach((id) => inFlight.delete(id)); setStatusError("Seen indicators unavailable. Database setup is required."); }
+        if (error) { ids.forEach((id) => inFlight.delete(id)); setStatusError(`Seen update failed: ${error.message}`); }
       });
     }, { root: panel, threshold: 0.5 });
     const observe = () => {
@@ -309,7 +335,7 @@ export const MessagingView: React.FC<{
                         })}
                         {isMine && <span className={`inline-flex items-center gap-1 ml-2 ${msg.isRead ? "text-sky-400" : "text-slate-400"}`}>
                           {msg.isRead ? <CheckCheck size={12} /> : <Check size={12} />}
-                          {msg.isRead ? "Seen" : "Sent"}
+                          {msg.isRead ? (msg.readAt ? `Seen ${timeAgo(msg.readAt, clock)}` : "Seen (time not recorded)") : "Sent · Not seen yet"}
                         </span>}
                       </span>
                     </div>
