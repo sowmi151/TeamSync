@@ -100,6 +100,10 @@ export interface Message {
   content: string;
   timestamp: string;
   isRead: boolean;
+  readAt?: string;
+  attachmentPath?: string;
+  attachmentType?: "image" | "video";
+  attachmentName?: string;
 }
 
 export type NotificationType =

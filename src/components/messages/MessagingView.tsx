@@ -2,7 +2,9 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import { Student } from "../../types";
 import { Avatar } from "../common/Avatar";
-import { MessageSquare, Search, Send } from "lucide-react";
+import { MessageSquare, Search, Send, Paperclip, X, CheckCheck, Check } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { ChatMedia, MEDIA_TYPES, validateMedia } from "../../lib/chatMedia";
 
 export const MessagingView: React.FC<{
   initialSelectedStudent?: Student | null;
@@ -37,6 +39,30 @@ export const MessagingView: React.FC<{
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activity, setActivity] = useState<Record<string, { last_active: string; online: boolean }>>({});
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [clock, setClock] = useState(Date.now());
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      const { data, error } = await supabase.from("user_activity").select("student_id,last_active,online");
+      if (!active) return;
+      setClock(Date.now());
+      if (error) { setStatusError("Activity status unavailable. Database setup is required."); return; }
+      setActivity(Object.fromEntries((data || []).map((row) => [row.student_id, row])));
+    };
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 10000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+  const activityLabel = (id: string) => {
+    const entry = activity[id];
+    if (!entry) return "Last active unavailable";
+    if (entry.online && clock - Date.parse(entry.last_active) < 75000) return "Online";
+    return `Last active ${new Date(entry.last_active).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+  };
   useEffect(() => {
     if (initialSelectedStudent && initialSelectedStudent.id !== currentUser.id) {
       setSelectedPartnerId(initialSelectedStudent.id);
@@ -71,6 +97,35 @@ export const MessagingView: React.FC<{
   }, [messages, currentUser, selectedPartner]);
 
   useEffect(() => {
+    const panel = messagesPanelRef.current;
+    if (!panel || !selectedPartner) return;
+    const inFlight = new Set<string>();
+    const observer = new IntersectionObserver((entries) => {
+      if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+      const ids = entries.filter((entry) => entry.isIntersecting)
+        .map((entry) => (entry.target as HTMLElement).dataset.messageId!)
+        .filter((id) => id && !inFlight.has(id));
+      if (!ids.length) return;
+      ids.forEach((id) => inFlight.add(id));
+      void supabase.rpc("teamsync_mark_seen", { message_ids: ids }).then(({ error }) => {
+        if (error) { ids.forEach((id) => inFlight.delete(id)); setStatusError("Seen indicators unavailable. Database setup is required."); }
+      });
+    }, { root: panel, threshold: 0.5 });
+    const observe = () => {
+      observer.disconnect();
+      panel.querySelectorAll("[data-unread='true']").forEach((element) => observer.observe(element));
+    };
+    observe();
+    window.addEventListener("focus", observe);
+    document.addEventListener("visibilitychange", observe);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("focus", observe);
+      document.removeEventListener("visibilitychange", observe);
+    };
+  }, [selectedPartner?.id, activeConversation]);
+
+  useEffect(() => {
     // Scroll inside the conversation without moving the surrounding page.
     const panel = messagesPanelRef.current;
     if (!panel) return;
@@ -89,13 +144,15 @@ export const MessagingView: React.FC<{
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (sending || !inputText.trim() || !selectedPartner) return;
+    if (sending || (!inputText.trim() && !attachment) || !selectedPartner) return;
     setSending(true);
     setSendError(null);
     try {
       sentMessageRef.current = true;
-      await sendMessage(selectedPartner.id, inputText.trim());
+      await sendMessage(selectedPartner.id, inputText.trim(), undefined, attachment || undefined);
       setInputText("");
+      setAttachment(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       sentMessageRef.current = false;
       setSendError(error instanceof Error ? error.message : "Unable to send message.");
@@ -153,7 +210,8 @@ export const MessagingView: React.FC<{
               return (
                 <button
                   key={partner.id}
-                  onClick={() => setSelectedPartnerId(partner.id)}
+                  disabled={sending}
+                  onClick={() => { setSelectedPartnerId(partner.id); setSendError(null); setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                   className={`w-full p-3.5 text-left transition-colors flex items-start gap-3 ${
                     isSelected
                       ? "bg-[#181822] border-l-2 border-[#D4AF37]"
@@ -172,7 +230,7 @@ export const MessagingView: React.FC<{
                         {partner.name}
                       </span>
                       <span className="text-[10px] text-emerald-400 font-mono">
-                        Member
+                        {activityLabel(partner.id)}
                       </span>
                     </div>
                     <div className="text-[11px] text-[#C5A880] truncate">
@@ -211,9 +269,9 @@ export const MessagingView: React.FC<{
                 </div>
 
                 <div className="text-right text-xs">
-                  <span className="text-emerald-400 text-[11px] font-mono flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Conversation</span>
+                  <span className={`text-[11px] font-mono flex items-center gap-1.5 ${activityLabel(selectedPartner.id) === "Online" ? "text-emerald-400" : "text-slate-400"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${activityLabel(selectedPartner.id) === "Online" ? "bg-emerald-400" : "bg-slate-500"}`} />
+                    <span>{activityLabel(selectedPartner.id)}</span>
                   </span>
                 </div>
               </div>
@@ -230,6 +288,8 @@ export const MessagingView: React.FC<{
                   return (
                     <div
                       key={msg.id}
+                      data-message-id={msg.id}
+                      data-unread={!isMine && !msg.isRead ? "true" : "false"}
                       className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
                     >
                       <div
@@ -239,13 +299,18 @@ export const MessagingView: React.FC<{
                             : "bg-[#181820] text-[#E8E4DD] border border-white/[0.07] rounded-bl-none"
                         }`}
                       >
-                        {msg.content}
+                        {msg.attachmentPath && msg.attachmentType && <ChatMedia path={msg.attachmentPath} type={msg.attachmentType} name={msg.attachmentName} />}
+                        <span className="whitespace-pre-wrap break-words">{msg.content}</span>
                       </div>
                       <span className="text-[10px] text-[#71717A] mt-1 px-1 font-mono">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
+                        {isMine && <span className={`inline-flex items-center gap-1 ml-2 ${msg.isRead ? "text-sky-400" : "text-slate-400"}`}>
+                          {msg.isRead ? <CheckCheck size={12} /> : <Check size={12} />}
+                          {msg.isRead ? "Seen" : "Sent"}
+                        </span>}
                       </span>
                     </div>
                   );
@@ -253,11 +318,25 @@ export const MessagingView: React.FC<{
               </div>
 
               {/* Input Footer */}
+              {statusError && <p role="status" className="shrink-0 px-3 text-xs text-amber-300">{statusError}</p>}
+              {attachment && <div className="shrink-0 p-2 flex items-center gap-2 text-xs text-slate-200">
+                <span>{attachment.name} ({(attachment.size / 1024 / 1024).toFixed(1)} MB)</span>
+                <button type="button" disabled={sending} aria-label="Remove attachment" onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}><X size={16} /></button>
+              </div>}
               {sendError && <p role="alert" className="shrink-0 p-3 text-sm text-red-400">{sendError}</p>}
               <form
                 onSubmit={handleSend}
                 className="shrink-0 p-3 border-t border-white/8 bg-[#14141A] flex items-center gap-2"
               >
+                <input ref={fileInputRef} type="file" className="hidden" accept={MEDIA_TYPES.join(",")}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    try { validateMedia(file); setAttachment(file); setSendError(null); }
+                    catch (error) { setSendError((error as Error).message); event.target.value = ""; }
+                  }} />
+                <button type="button" disabled={sending} title="Attach photo or video (up to 50 MB)" aria-label="Attach photo or video"
+                  onClick={() => fileInputRef.current?.click()} className="p-2 text-sky-300"><Paperclip size={20} /></button>
                 <input
                   type="text"
                   disabled={sending}
@@ -268,7 +347,7 @@ export const MessagingView: React.FC<{
                 />
                 <button
                   type="submit"
-                  disabled={sending || !inputText.trim()}
+                  disabled={sending || (!inputText.trim() && !attachment)}
                   aria-label={sending ? "Sending message" : "Send message"}
                   className="p-2.5 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65 transition-all"
                 >
