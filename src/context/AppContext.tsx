@@ -94,6 +94,13 @@ interface AppContextType {
 
 const STORAGE_KEY = "teamsync_v1_data";
 
+// A fresh browser has no cached profile; sample data may intentionally be empty.
+const EMPTY_USER: Student = {
+  id: "", name: "Scholar", email: "", department: "", year: "",
+  bio: "", skills: [], interests: [], roles: [], experience: null,
+  availability: null, projects: [], achievements: [],
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -102,11 +109,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentUser, setCurrentUser] = useState<Student>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_user`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const profile = JSON.parse(saved);
+        if (profile && typeof profile === "object" && typeof profile.id === "string") {
+          return { ...EMPTY_USER, ...profile };
+        }
+      }
     } catch (e) {
       console.error(e);
     }
-    return SEED_STUDENTS[0];
+    return SEED_STUDENTS[0] || { ...EMPTY_USER };
   });
 
   const currentUserRef = useRef<Student>(currentUser);
@@ -480,10 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     useState<Student | null>(null);
   const [selectedProjectForModal, setSelectedProjectForModal] =
     useState<Project | null>(null);
-  const [comparisonList, setComparisonList] = useState<Student[]>([
-    SEED_STUDENTS[1],
-    SEED_STUDENTS[2],
-  ]);
+  const [comparisonList, setComparisonList] = useState<Student[]>([]);
   const [filterSkillQuery, setFilterSkillQuery] = useState<string>("");
 
   useEffect(() => {
@@ -586,14 +595,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const isShortlisted = (studentId: string) => shortlist.includes(studentId);
 
   const addToComparison = (student: Student) => {
-    if (comparisonList.length >= 4) return;
-    if (!comparisonList.some((s) => s.id === student.id)) {
-      setComparisonList((prev) => [...prev, student]);
-    }
+    if (!student?.id) return;
+    setComparisonList((prev) => {
+      const valid = prev.filter((candidate) => candidate?.id);
+      if (valid.length >= 4 || valid.some((candidate) => String(candidate.id) === String(student.id))) return valid;
+      return [...valid, student];
+    });
   };
 
   const removeFromComparison = (studentId: string) => {
-    setComparisonList((prev) => prev.filter((s) => s.id !== studentId));
+    setComparisonList((prev) => prev.filter((s) => s?.id && String(s.id) !== String(studentId)));
   };
 
   const clearComparison = () => setComparisonList([]);
@@ -847,14 +858,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const resetDemoData = () => {
-    setCurrentUser(SEED_STUDENTS[0]);
+    setCurrentUser(SEED_STUDENTS[0] || { ...EMPTY_USER });
     setStudents(SEED_STUDENTS);
     setProjects(SEED_PROJECTS);
     setRequests(SEED_REQUESTS);
     setMessages(SEED_MESSAGES);
     setShortlist(["student-ananya"]);
     setNotifications(SEED_NOTIFICATIONS);
-    setComparisonList([SEED_STUDENTS[1], SEED_STUDENTS[2]]);
+    setComparisonList([]);
     try {
       localStorage.clear();
     } catch (e) {}

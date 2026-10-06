@@ -110,10 +110,15 @@ export const TeamNetwork3D: React.FC<{
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined;
+    let visible = false;
+    let scrolling = false;
+    let disposed = false;
     let pulseAngle = 0;
 
     const render = () => {
+      if (disposed || !visible || scrolling) return;
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
@@ -337,8 +342,31 @@ export const TeamNetwork3D: React.FC<{
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
-    return () => cancelAnimationFrame(animationFrameId);
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      cancelAnimationFrame(animationFrameId);
+      if (visible && !scrolling) animationFrameId = requestAnimationFrame(render);
+    });
+    observer.observe(canvas);
+
+    // Give browser scrolling priority over redrawing the decorative network.
+    const handlePageScroll = () => {
+      scrolling = true;
+      cancelAnimationFrame(animationFrameId);
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => {
+        scrolling = false;
+        if (visible && !disposed) animationFrameId = requestAnimationFrame(render);
+      }, 150);
+    };
+    window.addEventListener("scroll", handlePageScroll, { passive: true, capture: true });
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(animationFrameId);
+      clearTimeout(resumeTimer);
+      observer.disconnect();
+      window.removeEventListener("scroll", handlePageScroll, true);
+    };
   }, [nodes, backgroundStars, currentUser, hoveredNode, isDragging, mode]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {

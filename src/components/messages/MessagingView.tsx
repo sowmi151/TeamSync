@@ -36,6 +36,9 @@ export const MessagingView: React.FC<{
   const [searchQuery, setSearchQuery] = useState("");
   const [inputText, setInputText] = useState("");
   const messagesPanelRef = useRef<HTMLDivElement | null>(null);
+  const previousPartnerRef = useRef<string | undefined>(undefined);
+  const followLatestRef = useRef(true);
+  const sentMessageRef = useRef(false);
 
   const selectedPartner = useMemo(() => {
     return (
@@ -63,12 +66,24 @@ export const MessagingView: React.FC<{
   useEffect(() => {
     // Scroll inside the conversation without moving the surrounding page.
     const panel = messagesPanelRef.current;
-    if (panel) panel.scrollTop = panel.scrollHeight;
+    if (!panel) return;
+    const changedPartner = previousPartnerRef.current !== selectedPartner?.id;
+    previousPartnerRef.current = selectedPartner?.id;
+    if (changedPartner || sentMessageRef.current || followLatestRef.current) {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      panel.scrollTo({
+        top: panel.scrollHeight,
+        behavior: changedPartner || reduceMotion ? "instant" : "smooth",
+      });
+      followLatestRef.current = true;
+    }
+    sentMessageRef.current = false;
   }, [selectedPartner?.id, activeConversation.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !selectedPartner) return;
+    sentMessageRef.current = true;
     sendMessage(selectedPartner.id, inputText.trim());
     setInputText("");
   };
@@ -108,7 +123,7 @@ export const MessagingView: React.FC<{
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-white/[0.04]">
+          <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-white/[0.04]">
             {filteredPartners.map((partner) => {
               const isSelected = selectedPartner?.id === partner.id;
               const lastMsg = messages
@@ -190,7 +205,12 @@ export const MessagingView: React.FC<{
               </div>
 
               {/* Messages Body */}
-              <div ref={messagesPanelRef} className="flex-1 min-h-0 p-4 overflow-y-auto overscroll-contain space-y-3 bg-[#0F0F13]">
+              <div ref={messagesPanelRef}
+                onScroll={(event) => {
+                  const panel = event.currentTarget;
+                  followLatestRef.current = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80;
+                }}
+                className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3 bg-[#0F0F13]">
                 {activeConversation.map((msg) => {
                   const isMine = msg.senderId === currentUser.id;
                   return (

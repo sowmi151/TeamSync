@@ -45,6 +45,9 @@ export const CompareView: React.FC<{
   }, [validComparisonList]);
 
   const currentUserId = currentUser?.id || (currentUser as any)?._id || "";
+  const availableStudents = students.filter((student) => student?.id &&
+    String(student.id) !== String(currentUserId) &&
+    !validComparisonList.some((candidate) => String(candidate.id) === String(student.id)));
 
   return (
     <div className="space-y-6">
@@ -89,16 +92,7 @@ export const CompareView: React.FC<{
                 <option value="" disabled>
                   + Add Scholar ({validComparisonList.length}/4)
                 </option>
-                {students
-                  .filter(
-                    (s) =>
-                      s &&
-                      !validComparisonList.some(
-                        (c) =>
-                          String(c.id) === String(s.id) ||
-                          String((c as any)._id) === String(s.id),
-                      ),
-                  )
+                {availableStudents
                   .map((s) => (
                     <option key={s.id || (s as any)._id} value={s.id || (s as any)._id}>
                       {s.name} ({s.roles?.[0] || "Student"})
@@ -121,13 +115,13 @@ export const CompareView: React.FC<{
             pairwise compatibility, skill overlaps, and schedule alignments.
           </p>
           <div className="flex justify-center gap-2 pt-2">
-            {students.slice(0, 3).map((s) => (
+            {availableStudents.slice(0, 3).map((s) => (
               <button
                 key={s.id || (s as any)._id}
                 onClick={() => addToComparison(s)}
                 className="px-3 py-1.5 rounded-lg bg-[#181822] text-xs font-medium text-[#FAF7F2] border border-white/8 hover:border-[#D4AF37]/40"
               >
-                + Compare {s.name.split(" ")[0]}
+                + Compare {(s.name || "Scholar").split(" ")[0]}
               </button>
             ))}
           </div>

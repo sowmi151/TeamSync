@@ -57,7 +57,7 @@ const MainContent: React.FC = () => {
         const user = session.user;
         const email = user.email || "";
         setCurrentUser((previous) => ({
-          ...(previous.id === user.id ? previous : {
+          ...(previous?.id === user.id ? previous : {
             id: user.id, name: "", email: "", department: "", year: "",
             bio: "", skills: [], interests: [], roles: [], experience: null,
             availability: null, projects: [], achievements: [],
