@@ -35,7 +35,7 @@ export const MessagingView: React.FC<{
 
   const [searchQuery, setSearchQuery] = useState("");
   const [inputText, setInputText] = useState("");
-  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesPanelRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPartner = useMemo(() => {
     return (
@@ -61,8 +61,10 @@ export const MessagingView: React.FC<{
   }, [messages, currentUser, selectedPartner]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeConversation]);
+    // Scroll inside the conversation without moving the surrounding page.
+    const panel = messagesPanelRef.current;
+    if (panel) panel.scrollTop = panel.scrollHeight;
+  }, [selectedPartner?.id, activeConversation.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +94,7 @@ export const MessagingView: React.FC<{
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[600px] rounded-xl bg-[#121217] border border-white/8 overflow-hidden shadow-xl">
         {/* Left: Conversation List */}
-        <div className="md:col-span-4 bg-[#0E0E12] border-r border-white/8 flex flex-col h-full">
+        <div className="md:col-span-4 bg-[#0E0E12] border-r border-white/8 flex flex-col h-full min-h-0 overflow-hidden">
           <div className="p-3.5 border-b border-white/8">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-[#71717A]" />
@@ -106,7 +108,7 @@ export const MessagingView: React.FC<{
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-white/[0.04]">
             {filteredPartners.map((partner) => {
               const isSelected = selectedPartner?.id === partner.id;
               const lastMsg = messages
@@ -158,11 +160,11 @@ export const MessagingView: React.FC<{
         </div>
 
         {/* Right: Active Chat Area */}
-        <div className="md:col-span-8 flex flex-col h-full bg-[#121217]">
+        <div className="md:col-span-8 flex flex-col h-full min-h-0 overflow-hidden bg-[#121217]">
           {selectedPartner ? (
             <>
               {/* Chat Header */}
-              <div className="p-3.5 px-4 border-b border-white/8 bg-[#15151C] flex items-center justify-between">
+              <div className="shrink-0 p-3.5 px-4 border-b border-white/8 bg-[#15151C] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar
                     name={selectedPartner.name}
@@ -188,7 +190,7 @@ export const MessagingView: React.FC<{
               </div>
 
               {/* Messages Body */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#0F0F13]">
+              <div ref={messagesPanelRef} className="flex-1 min-h-0 p-4 overflow-y-auto overscroll-contain space-y-3 bg-[#0F0F13]">
                 {activeConversation.map((msg) => {
                   const isMine = msg.senderId === currentUser.id;
                   return (
@@ -214,13 +216,12 @@ export const MessagingView: React.FC<{
                     </div>
                   );
                 })}
-                <div ref={chatBottomRef} />
               </div>
 
               {/* Input Footer */}
               <form
                 onSubmit={handleSend}
-                className="p-3 border-t border-white/8 bg-[#14141A] flex items-center gap-2"
+                className="shrink-0 p-3 border-t border-white/8 bg-[#14141A] flex items-center gap-2"
               >
                 <input
                   type="text"
