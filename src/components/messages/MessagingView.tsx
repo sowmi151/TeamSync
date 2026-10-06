@@ -23,10 +23,10 @@ export const MessagingView: React.FC<{
       partnerIds.add(initialSelectedStudent.id);
     }
     if (partnerIds.size === 0) {
-      students.slice(1, 4).forEach((s) => partnerIds.add(s.id));
+      students.filter((s) => s.id !== currentUser.id).slice(0, 3).forEach((s) => partnerIds.add(s.id));
     }
 
-    return students.filter((s) => partnerIds.has(s.id));
+    return students.filter((s) => s.id !== currentUser.id && partnerIds.has(s.id));
   }, [messages, currentUser, students, initialSelectedStudent]);
 
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>(
@@ -35,6 +35,13 @@ export const MessagingView: React.FC<{
 
   const [searchQuery, setSearchQuery] = useState("");
   const [inputText, setInputText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialSelectedStudent && initialSelectedStudent.id !== currentUser.id) {
+      setSelectedPartnerId(initialSelectedStudent.id);
+    }
+  }, [initialSelectedStudent?.id, currentUser.id]);
   const messagesPanelRef = useRef<HTMLDivElement | null>(null);
   const previousPartnerRef = useRef<string | undefined>(undefined);
   const followLatestRef = useRef(true);
@@ -80,12 +87,19 @@ export const MessagingView: React.FC<{
     sentMessageRef.current = false;
   }, [selectedPartner?.id, activeConversation.length]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !selectedPartner) return;
-    sentMessageRef.current = true;
-    sendMessage(selectedPartner.id, inputText.trim());
-    setInputText("");
+    if (sending || !inputText.trim() || !selectedPartner) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      sentMessageRef.current = true;
+      await sendMessage(selectedPartner.id, inputText.trim());
+      setInputText("");
+    } catch (error) {
+      sentMessageRef.current = false;
+      setSendError(error instanceof Error ? error.message : "Unable to send message.");
+    } finally { setSending(false); }
   };
 
   const filteredPartners = conversationPartners.filter((p) =>
@@ -158,7 +172,7 @@ export const MessagingView: React.FC<{
                         {partner.name}
                       </span>
                       <span className="text-[10px] text-emerald-400 font-mono">
-                        Active
+                        Member
                       </span>
                     </div>
                     <div className="text-[11px] text-[#C5A880] truncate">
@@ -199,7 +213,7 @@ export const MessagingView: React.FC<{
                 <div className="text-right text-xs">
                   <span className="text-emerald-400 text-[11px] font-mono flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Connected</span>
+                    <span>Conversation</span>
                   </span>
                 </div>
               </div>
@@ -239,12 +253,14 @@ export const MessagingView: React.FC<{
               </div>
 
               {/* Input Footer */}
+              {sendError && <p role="alert" className="shrink-0 p-3 text-sm text-red-400">{sendError}</p>}
               <form
                 onSubmit={handleSend}
                 className="shrink-0 p-3 border-t border-white/8 bg-[#14141A] flex items-center gap-2"
               >
                 <input
                   type="text"
+                  disabled={sending}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder={`Dispatch message to ${selectedPartner.name.split(" ")[0]}...`}
@@ -252,6 +268,8 @@ export const MessagingView: React.FC<{
                 />
                 <button
                   type="submit"
+                  disabled={sending || !inputText.trim()}
+                  aria-label={sending ? "Sending message" : "Send message"}
                   className="p-2.5 rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65 transition-all"
                 >
                   <Send className="w-4 h-4 text-[#E5C07B]" />

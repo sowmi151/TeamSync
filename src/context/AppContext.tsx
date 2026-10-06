@@ -83,7 +83,7 @@ interface AppContextType {
     receiverId: string,
     content: string,
     projectId?: string,
-  ) => void;
+  ) => Promise<void>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   filterSkillQuery: string;
@@ -156,15 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return SEED_REQUESTS;
   });
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY}_messages`);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return SEED_MESSAGES;
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const [shortlist, setShortlist] = useState<string[]>(() => {
     try {
@@ -795,51 +787,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return newProj;
   };
 
-  const sendMessage = (
-    receiverId: string,
-    content: string,
-    projectId?: string,
-  ) => {
-    if (!content.trim()) return;
-    const newMsg: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUser.id,
-      receiverId,
-      projectId,
-      content,
-      timestamp: new Date().toISOString(),
-      isRead: true,
+  useEffect(() => {
+    let active = true;
+    let fetching = false;
+    const userId = currentUser.id;
+    setMessages([]);
+    if (!userId) return;
+    const refresh = async () => {
+      if (fetching || !active) return;
+      fetching = true;
+      try {
+        const { data, error } = await supabase.from("messages").select("*")
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+          .order("created_at", { ascending: true });
+        if (!active || error) return;
+        setMessages((data || []).map((row) => ({
+          id: String(row.id), senderId: String(row.sender_id), receiverId: String(row.receiver_id),
+          content: row.content, timestamp: row.created_at,
+          projectId: row.project_id || undefined, isRead: Boolean(row.read_status),
+        })));
+      } finally { fetching = false; }
     };
-    setMessages((prev) => [...prev, newMsg]);
+    void refresh();
+    const channel = supabase.channel(`messages-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => { void refresh(); })
+      .subscribe();
+    // Polling also delivers messages when Realtime is not enabled in the dashboard.
+    const timer = window.setInterval(() => { void refresh(); }, 3000);
+    return () => { active = false; window.clearInterval(timer); void supabase.removeChannel(channel); };
+  }, [currentUser.id]);
 
-    setTimeout(() => {
-      const recipient = students.find((s) => String(s.id) === String(receiverId));
-      if (recipient && recipient.id !== currentUser.id) {
-        const replyMsg: Message = {
-          id: `msg-reply-${Date.now()}`,
-          senderId: recipient.id,
-          receiverId: currentUser.id,
-          projectId,
-          content: `Thanks for reaching out! Looking forward to reviewing our skill synergy and collaborating on the project.`,
-          timestamp: new Date().toISOString(),
-          isRead: false,
-        };
-        setMessages((prev) => [...prev, replyMsg]);
-
-        const notif: NotificationItem = {
-          id: `notif-msg-${Date.now()}`,
-          type: "message",
-          title: `New Message from ${recipient.name}`,
-          description: `"${replyMsg.content.slice(0, 60)}..."`,
-          timestamp: new Date().toISOString(),
-          isRead: false,
-          linkTab: "messages",
-        };
-        setNotifications((prev) => [notif, ...prev]);
-      }
-    }, 1500);
+  const sendMessage = async (receiverId: string, content: string, projectId?: string): Promise<void> => {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    if (!currentUser.id || receiverId === currentUser.id) throw new Error("Choose another user to message.");
+    const newMsg: Message = {
+      id: crypto.randomUUID(), senderId: currentUser.id, receiverId, projectId,
+      content: trimmed, timestamp: new Date().toISOString(), isRead: false,
+    };
+    const { data, error } = await supabase.from("messages").insert({
+      id: newMsg.id, sender_id: newMsg.senderId, receiver_id: receiverId,
+      project_id: projectId || null, content: trimmed, created_at: newMsg.timestamp, read_status: false,
+    }).select("id").single();
+    if (error) throw new Error(`Message was not sent: ${error.message}`);
+    if (!data) throw new Error("Message was not saved. Please check database permissions.");
+    if (currentUserRef.current.id !== newMsg.senderId) return;
+    setMessages((prev) => prev.some((message) => message.id === newMsg.id) ? prev : [...prev, newMsg]);
   };
-
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
@@ -922,3 +916,4 @@ export const useApp = () => {
   }
   return context;
 };
+
