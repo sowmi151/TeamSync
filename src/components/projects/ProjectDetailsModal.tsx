@@ -3,14 +3,23 @@ import { useApp } from "../../context/AppContext";
 import { Project, Student } from "../../types";
 import { calculateProjectMatch } from "../../utils/matching/projectMatching";
 import { Avatar } from "../common/Avatar";
-import { Crown, Sparkles, X } from "lucide-react";
+import { Crown, Sparkles, X, Pencil, Trash2 } from "lucide-react";
 
 export const ProjectDetailsModal: React.FC<{
   project: Project | null;
   onClose: () => void;
   onRequestJoin: (project: Project) => void;
   onOpenProfile: (student: Student) => void;
-}> = ({ project, onClose, onRequestJoin, onOpenProfile }) => {
+  onEdit?: (project: Project) => void;
+  onDelete?: (projectId: string) => void;
+}> = ({
+  project,
+  onClose,
+  onRequestJoin,
+  onOpenProfile,
+  onEdit,
+  onDelete,
+}) => {
   const { currentUser, students, setActiveTab } = useApp();
 
   if (!project) return null;
@@ -18,6 +27,32 @@ export const ProjectDetailsModal: React.FC<{
   const matchResult = calculateProjectMatch(currentUser, project);
   const isMember = project.members.some((m) => m.studentId === currentUser.id);
   const isFull = project.members.length >= project.teamSize;
+
+  // Check if current user is owner or team lead
+  const isOwner =
+    (project as any).creatorId === currentUser.id ||
+    (project as any).ownerId === currentUser.id ||
+    (project as any).createdBy === currentUser.id ||
+    project.members.some(
+      (m) =>
+        m.studentId === currentUser.id &&
+        (m.role === "Leader" || m.role === "Team Lead" || (m as any).isLeader)
+    );
+
+  const handleDelete = () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${project.title}"?`
+    );
+    if (confirmed && onDelete) {
+      onDelete(project.id);
+      onClose();
+    }
+  };
+
+  const handleEdit = () => {
+    onClose();
+    onEdit?.(project);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -40,7 +75,7 @@ export const ProjectDetailsModal: React.FC<{
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06]"
+            className="p-1.5 rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -144,7 +179,10 @@ export const ProjectDetailsModal: React.FC<{
             {project.members.map((m) => {
               const student = students.find((s) => s.id === m.studentId);
               if (!student) return null;
-              const isLeader = project.creatorId === student.id;
+              const isLeader =
+                (project as any).creatorId === student.id ||
+                m.role === "Leader" ||
+                m.role === "Team Lead";
 
               return (
                 <div
@@ -177,22 +215,42 @@ export const ProjectDetailsModal: React.FC<{
         </div>
 
         {/* Actions Footer */}
-        <div className="pt-4 border-t border-white/8 flex items-center justify-between">
+        <div className="pt-4 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             onClick={() => {
               onClose();
               setActiveTab("build-team");
             }}
-            className="text-xs text-[#E5C07B] hover:underline flex items-center gap-1"
+            className="text-xs text-[#E5C07B] hover:underline flex items-center gap-1 self-start sm:self-auto"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Open in Squad Assembler</span>
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {isOwner && (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#E5C07B] border border-[#D4AF37]/40 flex items-center gap-1.5 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Brief</span>
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
+
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8"
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-colors"
             >
               Close
             </button>
@@ -203,7 +261,7 @@ export const ProjectDetailsModal: React.FC<{
                   onClose();
                   onRequestJoin(project);
                 }}
-                className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75"
+                className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all"
               >
                 Request Admission
               </button>

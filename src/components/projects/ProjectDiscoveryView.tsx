@@ -3,11 +3,18 @@ import { useApp } from "../../context/AppContext";
 import { Project } from "../../types";
 import { calculateProjectMatch } from "../../utils/matching/projectMatching";
 import { Plus, Search, Users } from "lucide-react";
+
 export const ProjectDiscoveryView: React.FC<{
   onOpenCreateProject: () => void;
   onSelectProject: (project: Project) => void;
   onRequestJoin: (project: Project) => void;
-}> = ({ onOpenCreateProject, onSelectProject, onRequestJoin }) => {
+  onEditProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
+}> = ({
+  onOpenCreateProject,
+  onSelectProject,
+  onRequestJoin,
+}) => {
   const { projects, currentUser } = useApp();
 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -21,7 +28,7 @@ export const ProjectDiscoveryView: React.FC<{
       const matchTitle = project.title.toLowerCase().includes(q);
       const matchDesc = project.description.toLowerCase().includes(q);
       const matchSkill = project.requiredSkills?.some((s) =>
-        s.name.toLowerCase().includes(q),
+        s.name.toLowerCase().includes(q)
       );
       if (!matchTitle && !matchDesc && !matchSkill) return false;
     }
@@ -95,7 +102,7 @@ export const ProjectDiscoveryView: React.FC<{
           const matchResult = calculateProjectMatch(currentUser, project);
           const isFull = project.members.length >= project.teamSize;
           const isMember = project.members.some(
-            (m) => m.studentId === currentUser.id,
+            (m) => m.studentId === currentUser?.id
           );
 
           return (
@@ -174,7 +181,7 @@ export const ProjectDiscoveryView: React.FC<{
               <div className="pt-3 border-t border-white/8 flex items-center justify-between gap-2">
                 <button
                   onClick={() => onSelectProject(project)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#FAF7F2] border border-white/8"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#FAF7F2] border border-white/8 transition-colors"
                 >
                   Examine Brief
                 </button>
@@ -188,7 +195,7 @@ export const ProjectDiscoveryView: React.FC<{
                 ) : (
                   <button
                     onClick={() => onRequestJoin(project)}
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65"
+                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/35 hover:border-[#D4AF37]/65 transition-all"
                   >
                     Request Entry
                   </button>

@@ -1,27 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import { Project, ProjectSkillRequirement } from "../../types";
-import { Plus, Trash2, X, Sparkles } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { Plus, Trash2, X, Sparkles, Pencil } from "lucide-react";
 
 interface CreateProjectModalProps {
   onClose: () => void;
   onCreated?: (project: Project) => void;
+  projectToEdit?: Project | null;
 }
 
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   onCreated,
+  projectToEdit,
 }) => {
-  const { currentUser, createProject } = useApp();
+  const { currentUser, createProject, setProjects } = useApp() as any;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<Project["category"]>("Hackathon");
   const [teamSize, setTeamSize] = useState<number>(4);
 
-  const [requiredSkills, setRequiredSkills] = useState<
-    ProjectSkillRequirement[]
-  >([
+  const [requiredSkills, setRequiredSkills] = useState<ProjectSkillRequirement[]>([
     { name: "Python", minProficiency: 75, isRequired: true },
     { name: "React", minProficiency: 75, isRequired: true },
     { name: "UI/UX", minProficiency: 70, isRequired: false },
@@ -37,6 +38,35 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     "UI/UX Designer",
   ]);
   const [newRole, setNewRole] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pre-fill state when editing an existing project
+  useEffect(() => {
+    if (projectToEdit) {
+      setTitle(projectToEdit.title || "");
+      setDescription(projectToEdit.description || "");
+      setCategory(projectToEdit.category || "Hackathon");
+      setTeamSize(projectToEdit.teamSize || 4);
+      if (projectToEdit.requiredSkills && projectToEdit.requiredSkills.length > 0) {
+        setRequiredSkills(projectToEdit.requiredSkills);
+      }
+      if (projectToEdit.requiredRoles && projectToEdit.requiredRoles.length > 0) {
+        setRequiredRoles(projectToEdit.requiredRoles);
+      }
+    } else {
+      // Default initial state for new briefs
+      setTitle("");
+      setDescription("");
+      setCategory("Hackathon");
+      setTeamSize(4);
+      setRequiredSkills([
+        { name: "Python", minProficiency: 75, isRequired: true },
+        { name: "React", minProficiency: 75, isRequired: true },
+        { name: "UI/UX", minProficiency: 70, isRequired: false },
+      ]);
+      setRequiredRoles(["Backend Developer", "Frontend Developer", "UI/UX Designer"]);
+    }
+  }, [projectToEdit]);
 
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
@@ -68,25 +98,81 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     setRequiredRoles((prev) => prev.filter((r) => r !== role));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
 
-    const newProj = createProject({
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      creatorId: currentUser.id,
-      teamSize,
-      requiredSkills,
-      requiredRoles,
-      status: "open",
-    });
+    setIsSubmitting(true);
 
-    if (onCreated) {
-      onCreated(newProj);
+    try {
+      if (projectToEdit) {
+        // --- UPDATE EXISTING PROJECT ---
+        const updatedFields = {
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          teamSize,
+          requiredSkills,
+          requiredRoles,
+        };
+
+        // Update in Supabase
+        const { error } = await supabase
+          .from("projects")
+          .update({
+            title: updatedFields.title,
+            description: updatedFields.description,
+            category: updatedFields.category,
+            team_size: updatedFields.teamSize,
+            required_skills: updatedFields.requiredSkills,
+            required_roles: updatedFields.requiredRoles,
+          })
+          .eq("id", projectToEdit.id);
+
+        if (error) {
+          console.warn("Supabase project update note:", error.message);
+        }
+
+        const updatedProject: Project = {
+          ...projectToEdit,
+          ...updatedFields,
+        };
+
+        // Update local React Context state
+        if (setProjects) {
+          setProjects((prev: Project[]) =>
+            prev.map((p) => (p.id === projectToEdit.id ? updatedProject : p))
+          );
+        }
+
+        if (onCreated) {
+          onCreated(updatedProject);
+        }
+        onClose();
+      } else {
+        // --- CREATE NEW PROJECT ---
+        const newProj = createProject({
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          creatorId: currentUser.id,
+          teamSize,
+          requiredSkills,
+          requiredRoles,
+          status: "open",
+        });
+
+        if (onCreated) {
+          onCreated(newProj);
+        }
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Failed to save project:", err);
+      alert(`Error saving project: ${err.message || err}`);
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   return (
@@ -94,20 +180,25 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#121217] border border-white/[0.12] shadow-2xl p-6 my-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-white/8 mb-6">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#E5C07B]" />
+            {projectToEdit ? (
+              <Pencil className="w-5 h-5 text-[#E5C07B]" />
+            ) : (
+              <Sparkles className="w-5 h-5 text-[#E5C07B]" />
+            )}
             <div>
               <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2]">
-                Publish Collegiate Project Brief
+                {projectToEdit ? "Edit Project Brief" : "Publish Collegiate Project Brief"}
               </h3>
               <p className="text-xs text-[#A1A1AA]">
-                Define skill criteria, target roles, and team scale for
-                intelligent teammate matching.
+                {projectToEdit
+                  ? "Update project scope, required skills, and team sizing."
+                  : "Define skill criteria, target roles, and team scale for intelligent teammate matching."}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06]"
+            className="p-2 rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/[0.06] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -213,7 +304,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemoveSkill(idx)}
-                      className="text-[#71717A] hover:text-rose-400"
+                      className="text-[#71717A] hover:text-rose-400 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -254,7 +345,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddSkill}
-                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/8 flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-[#1E1E26] hover:bg-[#252532] text-xs font-medium text-[#FAF7F2] border border-white/8 flex items-center gap-1 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5 text-[#E5C07B]" />
                 <span>Add Criterion</span>
@@ -276,7 +367,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveRole(role)}
-                    className="hover:text-rose-400"
+                    className="hover:text-rose-400 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -295,7 +386,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddRole}
-                className="px-3.5 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/8"
+                className="px-3.5 py-1.5 rounded-lg bg-[#1E1E26] text-xs font-medium text-[#FAF7F2] border border-white/8 hover:bg-[#252532] transition-colors"
               >
                 + Add Role
               </button>
@@ -306,15 +397,20 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8"
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#14141A] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all shadow-sm disabled:opacity-50"
             >
-              Publish Brief & Begin Matching
+              {isSubmitting
+                ? "Saving..."
+                : projectToEdit
+                ? "Save Changes"
+                : "Publish Brief & Begin Matching"}
             </button>
           </div>
         </form>

@@ -23,7 +23,7 @@ import { DatabaseModal } from "./components/database/DatabaseModal";
 import { PythonModal } from "./components/python/PythonModal";
 import { LoginView } from "./components/auth/LoginView";
 import { ConfirmProfileView } from "./components/auth/ConfirmProfileView";
-import { Student } from "./types";
+import { Student, Project } from "./types";
 import { Code, Database, Download, RotateCcw, LogOut } from "lucide-react";
 
 const MainContent: React.FC = () => {
@@ -37,7 +37,8 @@ const MainContent: React.FC = () => {
     currentUser,
     resetDemoData,
     setCurrentUser,
-  } = useApp();
+    setProjects,
+  } = useApp() as any;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signedInThisVisit, setSignedInThisVisit] = useState(isOAuthReturn);
@@ -50,42 +51,73 @@ const MainContent: React.FC = () => {
     let authEventReceived = false;
     const applySession = (session: Session | null) => {
       if (!active) return;
-      setNeedsConfirmation(Boolean(session &&
-        session.user.app_metadata.provider === "google" &&
-        session.user.user_metadata.teamsync_profile_confirmed !== true));
+      setNeedsConfirmation(
+        Boolean(
+          session &&
+            session.user.app_metadata.provider === "google" &&
+            session.user.user_metadata.teamsync_profile_confirmed !== true
+        )
+      );
       if (session) {
         const user = session.user;
         const email = user.email || "";
-        setCurrentUser((previous) => ({
-          ...(previous?.id === user.id ? previous : {
-            id: user.id, name: "", email: "", department: "", year: "",
-            bio: "", skills: [], interests: [], roles: [], experience: null,
-            availability: null, projects: [], achievements: [],
-          }),
+        setCurrentUser((previous: any) => ({
+          ...(previous?.id === user.id
+            ? previous
+            : {
+                id: user.id,
+                name: "",
+                email: "",
+                department: "",
+                year: "",
+                bio: "",
+                skills: [],
+                interests: [],
+                roles: [],
+                experience: null,
+                availability: null,
+                projects: [],
+                achievements: [],
+              }),
           id: user.id,
           email,
-          name: user.user_metadata.full_name || user.user_metadata.name ||
-            user.user_metadata.user_name || email.split("@")[0] || "Scholar",
+          name:
+            user.user_metadata.full_name ||
+            user.user_metadata.name ||
+            user.user_metadata.user_name ||
+            email.split("@")[0] ||
+            "Scholar",
           avatarUrl: user.user_metadata.avatar_url || "",
         }));
       }
       setIsAuthenticated(Boolean(session) && signedInThisVisit);
       setCheckingSession(false);
     };
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       authEventReceived = true;
       applySession(session);
     });
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!active || authEventReceived) return;
-      if (error) setAuthError(error.message);
-      applySession(data.session);
-    }).catch((error: Error) => {
-      if (!active || authEventReceived) return;
-      setAuthError(error.message);
-      applySession(null);
-    });
-    return () => { active = false; subscription.unsubscribe(); };
+
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!active || authEventReceived) return;
+        if (error) setAuthError(error.message);
+        applySession(data.session);
+      })
+      .catch((error: Error) => {
+        if (!active || authEventReceived) return;
+        setAuthError(error.message);
+        applySession(null);
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [setCurrentUser, signedInThisVisit]);
 
   const handleLogout = async () => {
@@ -97,7 +129,9 @@ const MainContent: React.FC = () => {
       setIsAuthenticated(false);
     }
   };
+
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showDownloadZip, setShowDownloadZip] = useState(false);
   const [showDatabaseModal, setShowDatabaseModal] = useState(false);
@@ -116,25 +150,58 @@ const MainContent: React.FC = () => {
     setRequestTargetStudent(student);
   };
 
-  if (checkingSession) {
-    return <div className="min-h-screen flex items-center justify-center text-white">Checking your session...</div>;
-  }
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
 
-  if (!isAuthenticated) {
+      if (error) {
+        console.error("Error deleting project:", error);
+        alert(`Failed to delete project: ${error.message}`);
+        return;
+      }
+
+      if (setProjects) {
+        setProjects((prev: Project[]) => prev.filter((p) => p.id !== projectId));
+      }
+    } catch (err: any) {
+      console.error("Error in delete execution:", err);
+      alert("An unexpected error occurred while deleting the project.");
+    }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setProjectToEdit(project);
+    setShowCreateProject(true);
+  };
+
+  if (checkingSession) {
     return (
-      <LoginView
-        onLogin={() => setSignedInThisVisit(true)}
-      />
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Checking your session...
+      </div>
     );
   }
 
+  if (!isAuthenticated) {
+    return <LoginView onLogin={() => setSignedInThisVisit(true)} />;
+  }
+
   if (needsConfirmation) {
-    return <ConfirmProfileView name={currentUser.name} email={currentUser.email}
-      onComplete={(name) => {
-        setCurrentUser((previous) => ({ ...previous, name }));
-        setNeedsConfirmation(false);
-        setActiveTab("dashboard");
-      }} onLogout={handleLogout} />;
+    return (
+      <ConfirmProfileView
+        name={currentUser.name}
+        email={currentUser.email}
+        onComplete={(name) => {
+          setCurrentUser((previous: any) => ({ ...previous, name }));
+          setNeedsConfirmation(false);
+          setActiveTab("dashboard");
+        }}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
@@ -142,12 +209,19 @@ const MainContent: React.FC = () => {
       <Header
         onLogout={handleLogout}
         onOpenDownloadZip={() => setShowDownloadZip(true)}
-        onOpenCreateProject={() => setShowCreateProject(true)}
+        onOpenCreateProject={() => {
+          setProjectToEdit(null);
+          setShowCreateProject(true);
+        }}
         onOpenDatabaseModal={() => setShowDatabaseModal(true)}
         onOpenPythonModal={() => setShowPythonModal(true)}
       />
 
-      {authError && <div role="alert" className="p-4 text-red-400">{authError}</div>}
+      {authError && (
+        <div role="alert" className="p-4 text-red-400">
+          {authError}
+        </div>
+      )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         {activeTab === "dashboard" && (
@@ -155,7 +229,10 @@ const MainContent: React.FC = () => {
             onOpenProfile={(s) => setSelectedStudentForModal(s)}
             onSendMessage={handleOpenMessage}
             onRequestTeam={handleOpenRequest}
-            onOpenCreateProject={() => setShowCreateProject(true)}
+            onOpenCreateProject={() => {
+              setProjectToEdit(null);
+              setShowCreateProject(true);
+            }}
           />
         )}
         {activeTab === "discover" && (
@@ -173,11 +250,16 @@ const MainContent: React.FC = () => {
         )}
         {activeTab === "projects" && (
           <ProjectDiscoveryView
-            onOpenCreateProject={() => setShowCreateProject(true)}
+            onOpenCreateProject={() => {
+              setProjectToEdit(null);
+              setShowCreateProject(true);
+            }}
             onSelectProject={(p) => setSelectedProjectForModal(p)}
+            onEditProject={handleEditProject}
+            onDeleteProject={handleDeleteProject}
             onRequestJoin={(p) => {
               const creator = {
-                id: p.creatorId,
+                id: (p as any).creatorId || (p as any).ownerId,
                 name: "Project Leader",
               } as Student;
               handleOpenRequest(creator);
@@ -186,7 +268,10 @@ const MainContent: React.FC = () => {
         )}
         {activeTab === "build-team" && (
           <BuildTeamView
-            onOpenCreateProject={() => setShowCreateProject(true)}
+            onOpenCreateProject={() => {
+              setProjectToEdit(null);
+              setShowCreateProject(true);
+            }}
             onOpenProfile={(s) => setSelectedStudentForModal(s)}
           />
         )}
@@ -194,7 +279,10 @@ const MainContent: React.FC = () => {
           <TeamDashboardView
             onOpenProfile={(s) => setSelectedStudentForModal(s)}
             onOpenMessage={handleOpenMessage}
-            onOpenCreateProject={() => setShowCreateProject(true)}
+            onOpenCreateProject={() => {
+              setProjectToEdit(null);
+              setShowCreateProject(true);
+            }}
           />
         )}
         {activeTab === "requests" && (
@@ -244,7 +332,7 @@ const MainContent: React.FC = () => {
                 <h4 className="text-[10px] font-bold text-[#71717A] uppercase tracking-widest font-mono">
                   Calibrated Competencies
                 </h4>
-                {currentUser.skills.map((s) => (
+                {currentUser.skills.map((s: any) => (
                   <div key={s.name} className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-[#FAF7F2] font-medium">
@@ -268,6 +356,8 @@ const MainContent: React.FC = () => {
         )}
         {activeTab === "test-suite" && <AlgorithmTestSuite />}
       </main>
+
+      {/* Creators & Footer */}
       <section className="border-t border-white/10 py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto space-y-10">
           <div>
@@ -307,9 +397,7 @@ const MainContent: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white">
                   {member.name}
                 </h3>
-
                 <p className="text-sm text-cyan-400 mt-1">{member.role}</p>
-
                 <div className="mt-4 flex flex-col gap-2 text-sm text-[#A1A1AA]">
                   <a
                     href={member.linkedin}
@@ -319,7 +407,6 @@ const MainContent: React.FC = () => {
                   >
                     🔗 LinkedIn
                   </a>
-
                   <a
                     href={member.github}
                     target="_blank"
@@ -328,7 +415,6 @@ const MainContent: React.FC = () => {
                   >
                     💻 GitHub
                   </a>
-
                   <a
                     href={`mailto:${member.email}`}
                     className="hover:text-white"
@@ -339,35 +425,31 @@ const MainContent: React.FC = () => {
               </div>
             ))}
           </div>
+
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">
               💬 Feedback & Queries
             </h2>
-
             <div className="max-w-2xl rounded-xl border border-white/10 bg-white/5 p-6">
               <p className="text-sm text-[#A1A1AA] mb-5">
                 Share your feedback or suggestions…
               </p>
-
               <div className="space-y-4">
                 <input
                   type="text"
                   placeholder="Name (optional)"
                   className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
                 />
-
                 <input
                   type="email"
                   placeholder="Email (optional)"
                   className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
                 />
-
                 <textarea
                   placeholder="Feedback / Query"
                   rows={5}
                   className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none resize-none"
                 />
-
                 <button className="px-5 py-3 rounded-lg bg-linear-to-r from-purple-500 to-cyan-500 text-white font-semibold">
                   Submit Feedback
                 </button>
@@ -377,16 +459,13 @@ const MainContent: React.FC = () => {
 
           <footer className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#71717A]">
             <div>© 2026 TeamSync • Built with ❤️ by TeamSync</div>
-
             <div className="flex items-center gap-4">
               <a href="#" className="hover:text-white">
                 LinkedIn
               </a>
-
               <a href="#" className="hover:text-white">
                 GitHub
               </a>
-
               <a href="mailto:example@email.com" className="hover:text-white">
                 Email
               </a>
@@ -394,6 +473,8 @@ const MainContent: React.FC = () => {
           </footer>
         </div>
       </section>
+
+      {/* Modals */}
       {selectedStudentForModal && (
         <StudentProfileModal
           student={selectedStudentForModal}
@@ -406,6 +487,7 @@ const MainContent: React.FC = () => {
           }}
         />
       )}
+
       {selectedProjectForModal && (
         <ProjectDetailsModal
           project={selectedProjectForModal}
@@ -413,28 +495,45 @@ const MainContent: React.FC = () => {
           onRequestJoin={(p) => {
             setSelectedProjectForModal(null);
             const creator = {
-              id: p.creatorId,
+              id: (p as any).creatorId || (p as any).ownerId,
               name: "Project Leader",
             } as Student;
             handleOpenRequest(creator);
           }}
           onOpenProfile={(s) => setSelectedStudentForModal(s)}
-        />
-      )}
-      {showCreateProject && (
-        <CreateProjectModal
-          onClose={() => setShowCreateProject(false)}
-          onCreated={(p) => {
-            setSelectedProjectForModal(p);
+          onEdit={(p) => {
+            setSelectedProjectForModal(null);
+            handleEditProject(p);
+          }}
+          onDelete={(id) => {
+            setSelectedProjectForModal(null);
+            handleDeleteProject(id);
           }}
         />
       )}
+
+      {showCreateProject && (
+        <CreateProjectModal
+          projectToEdit={projectToEdit}
+          onClose={() => {
+            setShowCreateProject(false);
+            setProjectToEdit(null);
+          }}
+          onCreated={(p) => {
+            setSelectedProjectForModal(p);
+            setProjectToEdit(null);
+          }}
+        />
+      )}
+
       {showEditProfile && (
         <ProfileEditModal onClose={() => setShowEditProfile(false)} />
       )}
+
       {showDownloadZip && (
         <DownloadZipModal onClose={() => setShowDownloadZip(false)} />
       )}
+
       {showDatabaseModal && (
         <DatabaseModal
           onClose={() => setShowDatabaseModal(false)}
@@ -444,6 +543,7 @@ const MainContent: React.FC = () => {
           }}
         />
       )}
+
       {showPythonModal && (
         <PythonModal
           onClose={() => setShowPythonModal(false)}
@@ -453,6 +553,7 @@ const MainContent: React.FC = () => {
           }}
         />
       )}
+
       {requestTargetStudent && (
         <SendTeamRequestModal
           targetStudent={requestTargetStudent}
