@@ -25,6 +25,57 @@ import { ConfirmProfileView } from "./components/auth/ConfirmProfileView";
 import { Student, Project } from "./types";
 import { Code, Database, Download, RotateCcw, LogOut } from "lucide-react";
 
+const FeedbackForm: React.FC = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const submitting = React.useRef(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (submitting.current) return;
+    setSuccess(false);
+    setError(null);
+    if (!message.trim()) { setError("Please enter your feedback or question."); return; }
+    submitting.current = true;
+    setSaving(true);
+    try {
+      const { data, error: authError } = await supabase.auth.getUser();
+      if (authError || !data.user) throw new Error("Please sign in again before submitting feedback.");
+      const { error: saveError } = await supabase.from("teamsync_feedback").insert({
+        user_id: data.user.id,
+        name: name.trim() || null,
+        email: email.trim() || null,
+        message: message.trim(),
+      });
+      if (saveError) throw new Error(`Feedback was not saved: ${saveError.message}`);
+      setSuccess(true);
+      setMessage("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to submit feedback. Please try again.");
+    } finally { submitting.current = false; setSaving(false); }
+  };
+  const inputClass = "w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none";
+  return <form onSubmit={submit} className="space-y-4">
+    <input type="text" aria-label="Name (optional)" placeholder="Name (optional)" maxLength={200}
+      value={name} onChange={(event) => setName(event.target.value)} disabled={saving} className={inputClass} />
+    <input type="email" aria-label="Email (optional)" placeholder="Email (optional)" maxLength={254}
+      value={email} onChange={(event) => setEmail(event.target.value)} disabled={saving} className={inputClass} />
+    <textarea aria-label="Feedback or question" placeholder="Feedback / Query" rows={5} required maxLength={5000}
+      value={message} onChange={(event) => { setMessage(event.target.value); setSuccess(false); }}
+      disabled={saving} className={`${inputClass} resize-none`} />
+    {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
+    {success && <p role="status" className="text-sm text-emerald-400">Thank you! Your feedback has been saved.</p>}
+    <button type="submit" disabled={saving}
+      className="px-5 py-3 rounded-lg bg-linear-to-r from-purple-500 to-cyan-500 text-white font-semibold disabled:opacity-60">
+      {saving ? "Submitting..." : "Submit Feedback"}
+    </button>
+  </form>;
+};
+
 const MainContent: React.FC = () => {
   const {
     activeTab,
@@ -424,26 +475,7 @@ const MainContent: React.FC = () => {
               <p className="text-sm text-[#A1A1AA] mb-5">
                 Share your feedback or suggestions…
               </p>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Name (optional)"
-                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
-                />
-                <input
-                  type="email"
-                  placeholder="Email (optional)"
-                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none"
-                />
-                <textarea
-                  placeholder="Feedback / Query"
-                  rows={5}
-                  className="w-full rounded-lg bg-[#0B1020] border border-white/10 px-4 py-3 text-white outline-none resize-none"
-                />
-                <button className="px-5 py-3 rounded-lg bg-linear-to-r from-purple-500 to-cyan-500 text-white font-semibold">
-                  Submit Feedback
-                </button>
-              </div>
+              <FeedbackForm />
             </div>
           </div>
 
