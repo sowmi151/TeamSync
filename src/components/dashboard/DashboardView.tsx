@@ -7,7 +7,6 @@ import { Avatar } from "../common/Avatar";
 import {
   AlertTriangle,
   ArrowRight,
-  Briefcase,
   Camera,
   CheckCircle2,
   Compass,
@@ -251,12 +250,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Highest Projected Synergies
               </h3>
             </div>
-            <button
-              onClick={() => setActiveTab("discover")}
-              className="text-xs text-[#E5C07B] hover:underline"
-            >
-              Examine Registry ({students.length - 1}) →
-            </button>
           </div>
 
           <div className="space-y-3">
@@ -329,19 +322,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Right (5 cols): Active Project Health & Gaps Alert */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-serif-title font-bold text-xl text-[#FAF7F2] flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-[#C5A880]" />
-              <span>Project Health</span>
-            </h3>
-            <button
-              onClick={() => setActiveTab("my-team")}
-              className="text-xs text-[#E5C07B] hover:underline"
-            >
-              Squad Workspace →
-            </button>
-          </div>
-
           {myProjects.length > 0 ? (
             <div className="p-5 rounded-xl bg-[#121217] border border-white/8 space-y-4 shadow-sm">
               <div>
@@ -420,20 +400,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="p-8 rounded-xl bg-[#121217] border border-white/8 text-center space-y-3">
-              <Briefcase className="w-6 h-6 text-[#71717A] mx-auto" />
-              <div className="text-xs text-[#A1A1AA]">
-                No current project affiliations found.
-              </div>
-              <button
-                onClick={onOpenCreateProject}
-                className="px-3.5 py-1.5 rounded-lg bg-[#251E14] text-[#E5C07B] border border-[#D4AF37]/30 text-xs font-medium"
-              >
-                Create Project
-              </button>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
