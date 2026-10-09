@@ -56,7 +56,6 @@ export const Header: React.FC<HeaderProps> = ({
       { id: "discover", label: "Discover" },
       { id: "compare", label: "Compare" },
       { id: "projects", label: "Projects" },
-      { id: "build-team", label: "Assemble Team" },
       { id: "my-team", label: "My Squad" },
       { id: "requests", label: "Requests", badge: pendingRequestsCount },
       { id: "messages", label: "Messages" },
@@ -72,11 +71,11 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab("dashboard")}
             className="flex items-center gap-2.5 group text-left"
           >
-        <img
-  src="/logo.png.jpeg"
-  alt="TeamSync Logo"
-  className="w-9 h-9 object-contain rounded-xl"
-/>
+            <img
+              src="/logo.png.jpeg"
+              alt="TeamSync Logo"
+              className="w-9 h-9 object-contain rounded-xl"
+            />
             <span className="font-serif-title text-2xl font-bold tracking-tight text-[#FAF7F2] group-hover:text-[#E8D390] transition-colors">
               TeamSync
             </span>
@@ -108,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </nav>
 
-        {/* Zone 3: Actions (Python Build, Accounts DB, Download ZIP, Notifications, User Switcher) */}
+        {/* Zone 3: Actions (Notifications, User Switcher, etc.) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Notifications Trigger */}
           <div className="relative">
@@ -304,7 +303,6 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           ))}
-          {/* Mobile Logout Option */}
           {onLogout && (
             <button
               onClick={onLogout}

@@ -7,7 +7,6 @@ import { DashboardView } from "./components/dashboard/DashboardView";
 import { DiscoverView } from "./components/students/DiscoverView";
 import { CompareView } from "./components/students/CompareView";
 import { ProjectDiscoveryView } from "./components/projects/ProjectDiscoveryView";
-import { BuildTeamView } from "./components/projects/BuildTeamView";
 import { TeamDashboardView } from "./components/team/TeamDashboardView";
 import { RequestsView } from "./components/requests/RequestsView";
 import { MessagingView } from "./components/messages/MessagingView";
@@ -158,7 +157,7 @@ const MainContent: React.FC = () => {
         .eq("id", projectId);
 
       if (error) {
-        console.error("Error deleting project:", error);
+        console.error("Supabase delete error:", error);
         alert(`Failed to delete project: ${error.message}`);
         return;
       }
@@ -264,15 +263,6 @@ const MainContent: React.FC = () => {
               } as Student;
               handleOpenRequest(creator);
             }}
-          />
-        )}
-        {activeTab === "build-team" && (
-          <BuildTeamView
-            onOpenCreateProject={() => {
-              setProjectToEdit(null);
-              setShowCreateProject(true);
-            }}
-            onOpenProfile={(s) => setSelectedStudentForModal(s)}
           />
         )}
         {activeTab === "my-team" && (

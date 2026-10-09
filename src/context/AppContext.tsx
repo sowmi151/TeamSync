@@ -34,7 +34,6 @@ export type NavigationTab =
   | "discover"
   | "compare"
   | "projects"
-  | "build-team"
   | "my-team"
   | "messages"
   | "requests"
@@ -47,6 +46,7 @@ interface AppContextType {
   setCurrentUser: React.Dispatch<React.SetStateAction<Student>>;
   students: Student[];
   projects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   requests: TeamRequest[];
   messages: Message[];
   shortlist: string[];
@@ -428,7 +428,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       "discover",
       "compare",
       "projects",
-      "build-team",
       "my-team",
       "messages",
       "requests",
@@ -458,7 +457,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         "discover",
         "compare",
         "projects",
-        "build-team",
         "my-team",
         "messages",
         "requests",
@@ -779,7 +777,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       id: `notif-${Date.now()}`,
       type: "high_match",
       title: "Project Created Successfully",
-      description: `"${newProj.title}" is now open for teammate matching! Check out recommendations in Build My Team.`,
+      description: `"${newProj.title}" is now open for teammate matching!`,
       timestamp: new Date().toISOString(),
       isRead: false,
       linkTab: "my-team",
@@ -913,6 +911,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentUser,
         students,
         projects,
+        setProjects,
         requests,
         messages,
         shortlist,
@@ -957,5 +956,3 @@ export const useApp = () => {
   }
   return context;
 };
-
-

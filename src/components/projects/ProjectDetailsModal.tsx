@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext";
 import { Project, Student } from "../../types";
 import { calculateProjectMatch } from "../../utils/matching/projectMatching";
 import { Avatar } from "../common/Avatar";
-import { Crown, Sparkles, X, Pencil, Trash2 } from "lucide-react";
+import { Crown, X, Pencil, Trash2 } from "lucide-react";
 
 export const ProjectDetailsModal: React.FC<{
   project: Project | null;
@@ -20,7 +20,7 @@ export const ProjectDetailsModal: React.FC<{
   onEdit,
   onDelete,
 }) => {
-  const { currentUser, students, setActiveTab } = useApp();
+  const { currentUser, students } = useApp();
 
   if (!project) return null;
 
@@ -215,58 +215,45 @@ export const ProjectDetailsModal: React.FC<{
         </div>
 
         {/* Actions Footer */}
-        <div className="pt-4 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="pt-4 border-t border-white/8 flex items-center justify-end gap-2 flex-wrap">
+          {isOwner && (
+            <>
+              <button
+                onClick={handleEdit}
+                className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#E5C07B] border border-[#D4AF37]/40 flex items-center gap-1.5 transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit Brief</span>
+              </button>
+
+              <button
+                onClick={handleDelete}
+                className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            </>
+          )}
+
           <button
-            onClick={() => {
-              onClose();
-              setActiveTab("build-team");
-            }}
-            className="text-xs text-[#E5C07B] hover:underline flex items-center gap-1 self-start sm:self-auto"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-colors"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Open in Squad Assembler</span>
+            Close
           </button>
 
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            {isOwner && (
-              <>
-                <button
-                  onClick={handleEdit}
-                  className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#181822] hover:bg-[#20202A] text-[#E5C07B] border border-[#D4AF37]/40 flex items-center gap-1.5 transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>Edit Brief</span>
-                </button>
-
-                <button
-                  onClick={handleDelete}
-                  className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 flex items-center gap-1.5 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
-              </>
-            )}
-
+          {!isMember && !isFull && (
             <button
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-lg bg-[#181822] text-[#A1A1AA] hover:text-[#FAF7F2] border border-white/8 transition-colors"
+              onClick={() => {
+                onClose();
+                onRequestJoin(project);
+              }}
+              className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all"
             >
-              Close
+              Request Admission
             </button>
-
-            {!isMember && !isFull && (
-              <button
-                onClick={() => {
-                  onClose();
-                  onRequestJoin(project);
-                }}
-                className="px-5 py-2 text-xs font-semibold rounded-lg bg-linear-to-r from-[#2B2317] to-[#3D321F] text-[#FAF7F2] border border-[#D4AF37]/40 hover:border-[#D4AF37]/75 transition-all"
-              >
-                Request Admission
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
